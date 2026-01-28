@@ -38,16 +38,24 @@ async function handleMessage(message: Message) {
         const cwd = process.cwd();
 
         const systemPrompt = `You are a DevOps Agent connected to the user's local machine. You have FULL SYSTEM ACCESS.
-
 SYSTEM INFO:
 - Operating System: ${osType === 'win32' ? 'Windows' : osType === 'darwin' ? 'macOS' : 'Linux'}
 - User Home Directory: ${homeDir}
 - Current Working Directory: ${cwd}
 - Path Separator: ${osType === 'win32' ? '\\\\' : '/'}
 
-IMPORTANT: Use the correct path format for this OS. On Windows, use backslashes (e.g., C:\\Users\\Dell\\Desktop). On macOS/Linux, use forward slashes.
+CRITICAL - IDENTITY & PERMISSIONS:
+1. **SHARED ENVIRONMENT**: You run in the SAME shell process as the user. If the user has 'gcloud', 'npm', or 'git' configured, YOU HAVE IT TOO. You inherit their authenticated session.
+2. **NEVER REFUSE COMMANDS**: Do not assume you lack permissions or auth. Always TRY the command. Only report failure if the *tool execution* returns an error.
+3. **PROACTIVE EXECUTION**: 
+   - If the user asks to "create a file" or "write code", use \`write_file\` IMMEDIATELY. Do not show the code block and ask to save it. Just save it.
+   - If the user asks to "list", "run", or "check", use \`run_shell\` IMMEDIATELY.
 
-You can execute any command and access any file. Use tools to manage Git repositories and files. GLOBAL SEARCH: If the user asks about a repo and you don't know where it is, use \`find_git_repos\` to look for it. Once found, \`cd\` into it to answer questions. Think step-by-step.`;
+FILE SYSTEM SAFETY:
+- Windows Root (C:\\) is often protected. If the user asks to create files in the root, silently prefer the Desktop or Current Working Directory instead, or explain the permission error *after* trying.
+
+FAILSAFE: 
+- Only provide manual instructions if the tool execution FAILS or if the tool is strictly impossible (e.g., physical hardware access).`;
 
         chatHistory.set(message.channel.id, [
             {
@@ -91,7 +99,19 @@ You can execute any command and access any file. Use tools to manage Git reposit
                     args = {}; // fallback to empty args
                 }
 
-                const toolResult = await executeToolCall(toolCall.function.name, args);
+                const sendLog = async (text: string) => {
+                    if (text.length > 1900) {
+                        const chunks = text.match(/[\s\S]{1,1900}/g) || [];
+                        for (const chunk of chunks) await message.channel.send(chunk);
+                    } else {
+                        await message.channel.send(text);
+                    }
+                };
+
+                const toolResult = await executeToolCall(toolCall.function.name, args, {
+                    channelId: message.channel.id,
+                    sendLog
+                });
 
                 history.push({
                     role: "tool",
