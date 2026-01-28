@@ -15,7 +15,7 @@ const DISCORD_TOKEN = process.env.DISCORD_TOKEN!;
 const ALLOWED_USER_ID = process.env.ALLOWED_USER_ID!;
 
 // 🚀 REASONING MODEL (DeepSeek R1 is excellent for this)
-const MODEL_NAME = "nvidia/nemotron-3-nano-30b-a3b:free";
+const MODEL_NAME = process.env.MODEL_NAME || "nvidia/nemotron-3-nano-30b-a3b:free";
 
 // const SAFE_ROOT = path.join(process.cwd(), "workspace");
 let currentDir = process.cwd();
@@ -224,10 +224,15 @@ async function callOpenRouter(messages: any[]) {
   );
 
   if (!response.ok) {
-    throw new Error(`OpenRouter API Error: ${response.statusText}`);
+    const errorBody = await response.text();
+    throw new Error(`OpenRouter API Error: ${response.statusText} - ${errorBody}`);
   }
 
   const data = await response.json();
+  if (!data.choices || data.choices.length === 0) {
+    console.error("OpenRouter API unexpected response:", JSON.stringify(data, null, 2));
+    throw new Error("OpenRouter API returned no choices.");
+  }
   return data.choices[0].message;
 }
 
