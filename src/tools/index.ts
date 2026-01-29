@@ -17,7 +17,7 @@ export async function executeToolCall(name: string, args: any, context?: ToolCon
         return handleShellCommand(args, context);
     }
     if (fileTools.some(t => t.function.name === name)) {
-        return handleFileTool(name, args);
+        return handleFileTool(name, args, context);
     }
     if (searchTools.some(t => t.function.name === name)) {
         return handleSearchTool(name, args);

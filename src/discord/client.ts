@@ -3,6 +3,9 @@ import { CONFIG } from "../config/env.js";
 import { callOpenRouter } from "../llm/openRouter.js";
 import { executeToolCall } from "../tools/index.js";
 import { smartSplitMessage } from "./utils.js";
+import { permissionManager } from "../core/PermissionManager.js";
+import { workspaceManager } from "../core/WorkspaceManager.js";
+import type { ToolContext } from "../types/toolContext.js";
 
 export const client = new Client({
     intents: [
@@ -24,9 +27,75 @@ client.on("messageCreate", async (message) => {
     await handleMessage(message);
 });
 
+async function handleAdminCommand(message: Message) {
+    const args = message.content.trim().split(/\s+/);
+    const command = args[0].toLowerCase();
+    const adminId = message.author.id;
+
+    if (!permissionManager.isAdmin(adminId)) {
+        await message.reply("❌ You do not have permission to run admin commands.");
+        return;
+    }
+
+    try {
+        if (command === "!grant") {
+            const targetUser = message.mentions.users.first();
+            const role = args[2] as any;
+            if (!targetUser || !['read', 'write', 'admin'].includes(role)) {
+                await message.reply("Usage: `!grant @user <read|write|admin>`");
+                return;
+            }
+            permissionManager.grant(adminId, targetUser.id, role);
+            workspaceManager.ensureWorkspace(targetUser.id);
+            await message.reply(`✅ Granted **${role}** access to ${targetUser.tag}`);
+            return;
+        }
+
+        if (command === "!revoke") {
+            const targetUser = message.mentions.users.first();
+            if (!targetUser) {
+                await message.reply("Usage: `!revoke @user`");
+                return;
+            }
+            permissionManager.revoke(adminId, targetUser.id);
+            await message.reply(`🚫 Revoked access from ${targetUser.tag}`);
+            return;
+        }
+
+        if (command === "!workspace") {
+            if (args[1] === "create") {
+                const targetUser = message.mentions.users.first();
+                if (!targetUser) {
+                    await message.reply("Usage: `!workspace create @user`");
+                    return;
+                }
+                const path = workspaceManager.ensureWorkspace(targetUser.id);
+                await message.reply(`📂 Workspace created at: \`${path}\``);
+                return;
+            }
+        }
+    } catch (error: any) {
+        await message.reply(`❌ Error: ${error.message}`);
+    }
+}
+
 async function handleMessage(message: Message) {
     if (message.author.bot) return;
-    if (CONFIG.ALLOWED_USER_ID && message.author.id !== CONFIG.ALLOWED_USER_ID) return;
+
+    // 0. Handle Admin Commands
+    if (message.content.startsWith("!")) {
+        await handleAdminCommand(message);
+        return;
+    }
+
+    const userId = message.author.id;
+
+    // 1. Permission Check
+    if (!permissionManager.canRead(userId)) {
+        // Optional: Reply once or maintain silence. Silence is safer/cleaner.
+        // If they DM the bot, maybe reply? For now, silence.
+        return;
+    }
 
     // Type guard for text-based channels
     if (!message.channel.isSendable()) return;
@@ -35,28 +104,24 @@ async function handleMessage(message: Message) {
     if (!chatHistory.has(message.channel.id)) {
         // Build dynamic system context
         const homeDir = process.env.USERPROFILE || process.env.HOME || "unknown";
-        const osType = process.platform; // 'win32', 'darwin', 'linux'
+        const osType = process.platform;
         const cwd = process.cwd();
 
-        const systemPrompt = `You are a DevOps Agent connected to the user's local machine. You have FULL SYSTEM ACCESS.
+        // Determine prompt based on User Role causes cache fragmentation but is safer
+        const isAdmin = permissionManager.isAdmin(userId);
+        const workspacePath = isAdmin ? cwd : workspaceManager.ensureWorkspace(userId);
+
+        const systemPrompt = `You are a DevOps Agent connected to the user's local machine.
 SYSTEM INFO:
-- Operating System: ${osType === 'win32' ? 'Windows' : osType === 'darwin' ? 'macOS' : 'Linux'}
-- User Home Directory: ${homeDir}
-- Current Working Directory: ${cwd}
-- Path Separator: ${osType === 'win32' ? '\\\\' : '/'}
+- OS: ${osType}
+- User Workspace: ${workspacePath}
+${isAdmin ? "- **ADMIN ACCESS**: You have full system access." : "- **SANDBOXED**: You are restricted to your workspace directory."}
 
-CRITICAL - IDENTITY & PERMISSIONS:
-1. **SHARED ENVIRONMENT**: You run in the SAME shell process as the user. If the user has 'gcloud', 'npm', or 'git' configured, YOU HAVE IT TOO. You inherit their authenticated session.
-2. **NEVER REFUSE COMMANDS**: Do not assume you lack permissions or auth. Always TRY the command. Only report failure if the *tool execution* returns an error.
-3. **PROACTIVE EXECUTION**: 
-   - If the user asks to "create a file" or "write code", use \`write_file\` IMMEDIATELY. Do not show the code block and ask to save it. Just save it.
-   - If the user asks to "list", "run", or "check", use \`run_shell\` IMMEDIATELY.
-
-FILE SYSTEM SAFETY:
-- Windows Root (C:\\) is often protected. If the user asks to create files in the root, silently prefer the Desktop or Current Working Directory instead, or explain the permission error *after* trying.
-
-FAILSAFE: 
-- Only provide manual instructions if the tool execution FAILS or if the tool is strictly impossible (e.g., physical hardware access).`;
+CRITICAL INSTRUCTIONS:
+1. **PERMISSIONS**: ${isAdmin ? "You are running as ADMIN." : "You are a RESTRICTED user. You can only write/read files within your workspace."}
+2. **TOOLS**: Use 'write_file' and 'run_shell' to execute tasks.
+3. ${isAdmin ? "Do not refuse commands." : "If you try to access files outside your workspace, the tool will fail. Explain this to the user."}
+`;
 
         chatHistory.set(message.channel.id, [
             {
@@ -109,10 +174,16 @@ FAILSAFE:
                     }
                 };
 
-                const toolResult = await executeToolCall(toolCall.function.name, args, {
+                // PREPARE CONTEXT WITH PERMISSIONS
+                const isAdmin = permissionManager.isAdmin(userId);
+                const context: ToolContext = {
                     channelId: message.channel.id,
-                    sendLog
-                });
+                    sendLog,
+                    userId,
+                    workspaceRoot: isAdmin ? undefined : workspaceManager.ensureWorkspace(userId)
+                };
+
+                const toolResult = await executeToolCall(toolCall.function.name, args, context);
 
                 history.push({
                     role: "tool",
