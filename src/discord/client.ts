@@ -1,7 +1,8 @@
-import { Client, GatewayIntentBits, Partials, Message } from "discord.js";
+import { Client, GatewayIntentBits, Partials, Message, type TextBasedChannel } from "discord.js";
 import { CONFIG } from "../config/env.js";
 import { callOpenRouter } from "../llm/openRouter.js";
 import { executeToolCall } from "../tools/index.js";
+import { smartSplitMessage } from "./utils.js";
 
 export const client = new Client({
     intents: [
@@ -100,11 +101,11 @@ FAILSAFE:
                 }
 
                 const sendLog = async (text: string) => {
-                    if (text.length > 1900) {
-                        const chunks = text.match(/[\s\S]{1,1900}/g) || [];
-                        for (const chunk of chunks) await message.channel.send(chunk);
-                    } else {
-                        await message.channel.send(text);
+                    const chunks = smartSplitMessage(text, 1900);
+                    for (const chunk of chunks) {
+                        if (message.channel.isSendable()) {
+                            await (message.channel as TextBasedChannel).send(chunk);
+                        }
                     }
                 };
 
@@ -139,11 +140,15 @@ FAILSAFE:
             }
             text = text || "Done (No content returned by AI).";
 
-            if (text.length > 2000) {
-                const chunks = text.match(/[\s\S]{1,1900}/g) || [];
-                for (const chunk of chunks) await message.channel.send(chunk);
+            const chunks = smartSplitMessage(text, 2000);
+            if (chunks.length === 1 && chunks[0] !== undefined) {
+                await message.reply(chunks[0]);
             } else {
-                await message.reply(text);
+                for (const chunk of chunks) {
+                    if (message.channel.isSendable()) {
+                        await (message.channel as TextBasedChannel).send(chunk);
+                    }
+                }
             }
         } else {
             // No tools, just reply
@@ -155,11 +160,15 @@ FAILSAFE:
             }
 
             // Chunk long messages
-            if (replyText.length > 2000) {
-                const chunks = replyText.match(/[\s\S]{1,1900}/g) || [];
-                for (const chunk of chunks) await message.channel.send(chunk);
+            const chunks = smartSplitMessage(replyText, 2000);
+            if (chunks.length === 1 && chunks[0] !== undefined) {
+                await message.reply(chunks[0]);
             } else {
-                await message.reply(replyText);
+                for (const chunk of chunks) {
+                    if (message.channel.isSendable()) {
+                        await (message.channel as TextBasedChannel).send(chunk);
+                    }
+                }
             }
         }
     } catch (error) {

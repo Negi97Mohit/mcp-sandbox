@@ -75,35 +75,41 @@ export async function handleShellCommand(args: { command: string }, context?: To
         });
 
         let outputBuffer = "";
+        let pendingInfos = ""; // Temp buffer for throttling
         let lastOutputTime = 0;
-        const flushInterval = 1000; // Throttle Discord updates
+        const flushInterval = 1500; // 1.5s throttle to avoid spamming
+
+        // Helper to send formatted chunks
+        const sendBufferedOutput = async (text: string) => {
+            if (!text || !context) return;
+            // Wrap in code block
+            const formatted = `\`\`\`text\n${text}\n\`\`\``;
+            await context.sendLog(formatted).catch(console.error);
+        };
+
+        // Helper to strip ANSI escape codes
+        const stripAnsi = (str: string) => {
+            return str.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
+        };
 
         // Stream handler
-        const processOutput = async (data: Buffer) => {
-            const text = data.toString();
+        const processOutput = (data: Buffer) => {
+            const rawText = data.toString();
+            const text = stripAnsi(rawText); // Clean up colors/styles
+
             outputBuffer += text;
-            process.stdout.write(text); // Log to server console too
+            pendingInfos += text;
+            process.stdout.write(rawText); // Keep colors for server console
 
-            if (context && (Date.now() - lastOutputTime > flushInterval)) {
-                // In a real app, we'd debounce this better or use a persistent message
-                // For now, we'll just let it buffer in the final output or send chunks?
-                // The plan said "stream via context.sendLog".
-                // Let's try to send chunks if they are significant, 
-                // but Discord rate limits are strict. 
-                // Better strategy: We return the FINAL output to the LLM, 
-                // but we assume the `sendLog` implementation handles buffering/editing.
-
-                // Actually, let's just send "processing..." updates or minimal logs?
-                // No, the user wants "streaming".
-                // Let's assume one update per second max.
-                if (text.length > 0) {
-                    // We won't await this to avoid blocking the stream
-                    context.sendLog(text).catch(console.error);
-                    lastOutputTime = Date.now();
+            if (context) {
+                const now = Date.now();
+                if (now - lastOutputTime > flushInterval) {
+                    if (pendingInfos.length > 0) {
+                        sendBufferedOutput(pendingInfos);
+                        pendingInfos = "";
+                        lastOutputTime = now;
+                    }
                 }
-            } else if (context) {
-                // simple passthrough for now
-                context.sendLog(text).catch(console.error);
             }
         };
 
@@ -114,9 +120,14 @@ export async function handleShellCommand(args: { command: string }, context?: To
             resolve({ error: `Failed to start command: ${err.message}` });
         });
 
-        child.on("close", (code) => {
+        child.on("close", async (code) => {
+            // Flush remaining
+            if (context && pendingInfos.length > 0) {
+                await sendBufferedOutput(pendingInfos);
+            }
+
             const resultMsg = `\n[Process exited with code ${code}]`;
-            if (context) context.sendLog(resultMsg).catch(console.error);
+            if (context) await context.sendLog(resultMsg).catch(console.error);
 
             // Return context to LLM
             resolve({
