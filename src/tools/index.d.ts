@@ -7,22 +7,6 @@ export declare const allTools: ({
         parameters: {
             type: string;
             properties: {
-                command: {
-                    type: string;
-                    description: string;
-                };
-            };
-            required: string[];
-        };
-    };
-} | {
-    type: string;
-    function: {
-        name: string;
-        description: string;
-        parameters: {
-            type: string;
-            properties: {
                 path: {
                     type: string;
                     description?: never;
@@ -66,6 +50,22 @@ export declare const allTools: ({
                 content?: never;
             };
             required?: never;
+        };
+    };
+} | {
+    type: string;
+    function: {
+        name: string;
+        description: string;
+        parameters: {
+            type: string;
+            properties: {
+                command: {
+                    type: string;
+                    description: string;
+                };
+            };
+            required: string[];
         };
     };
 } | {

@@ -28,10 +28,16 @@ function setSessionCwd(channelId, newPath) {
 export async function handleShellCommand(args, context) {
     const { command } = args;
     const channelId = context?.channelId || "default";
+    // Initialize session if needed
+    if (!shellSessions.has(channelId)) {
+        // If sandboxed, start in workspace root. Else CWD.
+        const initialDir = context?.workspaceRoot ? context.workspaceRoot : process.cwd();
+        setSessionCwd(channelId, initialDir);
+    }
     let currentDir = getSessionCwd(channelId);
     // FIX: Fallback if currentDir doesn't exist (deleted folder)
     if (!fs.existsSync(currentDir)) {
-        currentDir = process.cwd();
+        currentDir = context?.workspaceRoot || process.cwd();
         setSessionCwd(channelId, currentDir);
     }
     // 1. Handle 'cd' manually
@@ -39,6 +45,10 @@ export async function handleShellCommand(args, context) {
         const rawPath = command.trim().slice(3).trim();
         try {
             const target = path.resolve(currentDir, rawPath);
+            // Security Check for Sandbox
+            if (context?.workspaceRoot && !target.startsWith(context.workspaceRoot)) {
+                return { error: `Access Denied: You cannot navigate outside your workspace.` };
+            }
             if (fs.existsSync(target) && fs.statSync(target).isDirectory()) {
                 setSessionCwd(channelId, target);
                 const msg = `📂 Changed directory to: ${target}`;

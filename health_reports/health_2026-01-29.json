@@ -1,0 +1,38 @@
+{
+  "timestamp": "2026-01-29T09:06:42.506Z",
+  "date": "2026-01-29",
+  "overallStatus": "healthy",
+  "checks": [
+    {
+      "name": "API Key",
+      "status": "pass",
+      "message": "✅ API Key configured",
+      "details": "Key: sk-or-v1-5e8...e952"
+    },
+    {
+      "name": "Discord Token",
+      "status": "pass",
+      "message": "✅ Discord Token configured",
+      "details": "Token: MTQ2NDIxMT..."
+    },
+    {
+      "name": "Model Connectivity",
+      "status": "pass",
+      "message": "✅ Model responding (2618ms)",
+      "details": "Model: google/gemma-3-27b-it:free",
+      "responseTimeMs": 2618
+    },
+    {
+      "name": "Tools",
+      "status": "pass",
+      "message": "✅ 12 tools registered",
+      "details": "run_shell, write_file, read_file, list_files, find_git_repos, netlify_env_manage, netlify_functions_manage, netlify_site_manage, netlify_deploy, netlify_build_run, netlify_dev_exec, netlify_run"
+    },
+    {
+      "name": "System Info",
+      "status": "pass",
+      "message": "📊 System Status",
+      "details": "OS: win32 10.0.26200\nNode: v24.13.0\nUptime: 7s\nMemory: 32MB"
+    }
+  ]
+}

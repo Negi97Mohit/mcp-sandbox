@@ -39,24 +39,35 @@ export const fileTools = [
         },
     },
 ];
-// Helper to ensure we aren't unexpectedly relative if not desired, 
-// though for "full system access" we just trust the input or resolve from CWD.
-function resolvePath(p) {
-    if (path.isAbsolute(p))
-        return p;
-    return path.resolve(process.cwd(), p);
+function resolveSecurePath(requestedPath, context) {
+    // 1. If no workspace sandbox, behave normally (Admin mode)
+    if (!context?.workspaceRoot) {
+        if (path.isAbsolute(requestedPath))
+            return requestedPath;
+        return path.resolve(process.cwd(), requestedPath);
+    }
+    // 2. Sandbox mode
+    const root = context.workspaceRoot;
+    // Resolve relative to workspace root (even if absolute path is given, we might want to treat it relative if it's suspicious, but for now let's assume absolute paths are rejected or checked)
+    // Better strategy: Treat ALL paths as relative to workspaceRoot for sandboxed users
+    // unless they explicitly try to escape.
+    const resolved = path.resolve(root, requestedPath);
+    if (!resolved.startsWith(root)) {
+        throw new Error(`Access Denied: You cannot verify files outside your workspace (${root}).`);
+    }
+    return resolved;
 }
-export async function handleFileTool(name, args) {
+export async function handleFileTool(name, args, context) {
     try {
         if (name === "write_file") {
-            const p = resolvePath(args.path);
+            const p = resolveSecurePath(args.path, context);
             fs.mkdirSync(path.dirname(p), { recursive: true });
             fs.writeFileSync(p, args.content);
             console.log(`✍️ Wrote file: ${p}`);
             return { success: true, path: p };
         }
         if (name === "read_file") {
-            const p = resolvePath(args.path);
+            const p = resolveSecurePath(args.path, context);
             console.log(`📖 Reading file: ${p}`);
             if (!fs.existsSync(p))
                 return { error: "File not found" };
@@ -64,7 +75,8 @@ export async function handleFileTool(name, args) {
             return { content };
         }
         if (name === "list_files") {
-            const p = args.path ? resolvePath(args.path) : process.cwd();
+            const target = args.path || "."; // Default to current dir (relative)
+            const p = resolveSecurePath(target, context);
             console.log(`📂 Listing files in: ${p}`);
             if (!fs.existsSync(p))
                 return { error: "Directory not found" };

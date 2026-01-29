@@ -1,3 +1,4 @@
+import type { ToolContext } from "../types/toolContext.js";
 export declare const fileTools: ({
     type: string;
     function: {
@@ -52,7 +53,7 @@ export declare const fileTools: ({
         };
     };
 })[];
-export declare function handleFileTool(name: string, args: any): Promise<{
+export declare function handleFileTool(name: string, args: any, context?: ToolContext): Promise<{
     success: boolean;
     path: string;
     content?: never;
