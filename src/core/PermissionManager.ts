@@ -84,6 +84,13 @@ export class PermissionManager {
         const role = this.getRole(userId);
         return role !== 'none';
     }
+
+    public listAll(): { userId: string; role: PermissionLevel }[] {
+        return Object.entries(this.data.users).map(([userId, data]) => ({
+            userId,
+            role: data.role
+        }));
+    }
 }
 
 export const permissionManager = new PermissionManager();

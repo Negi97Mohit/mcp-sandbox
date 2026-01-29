@@ -62,6 +62,17 @@ async function handleAdminCommand(message: Message) {
             return;
         }
 
+        if (command === "!permissions") {
+            const allUsers = permissionManager.listAll();
+            if (allUsers.length === 0) {
+                await message.reply("No users have been granted access yet.");
+                return;
+            }
+            const lines = allUsers.map(u => `• <@${u.userId}>: **${u.role}**`).join('\n');
+            await message.reply(`📋 **User Permissions:**\n${lines}`);
+            return;
+        }
+
         if (command === "!workspace") {
             if (args[1] === "create") {
                 const targetUser = message.mentions.users.first();
@@ -101,13 +112,15 @@ async function handleMessage(message: Message) {
     if (!message.channel.isSendable()) return;
     await message.channel.sendTyping();
 
-    if (!chatHistory.has(message.channel.id)) {
+    // Use composite key: channel + user for isolated prompts per user
+    const historyKey = `${message.channel.id}:${userId}`;
+
+    if (!chatHistory.has(historyKey)) {
         // Build dynamic system context
-        const homeDir = process.env.USERPROFILE || process.env.HOME || "unknown";
         const osType = process.platform;
         const cwd = process.cwd();
 
-        // Determine prompt based on User Role causes cache fragmentation but is safer
+        // Determine prompt based on User Role
         const isAdmin = permissionManager.isAdmin(userId);
         const workspacePath = isAdmin ? cwd : workspaceManager.ensureWorkspace(userId);
 
@@ -123,14 +136,14 @@ CRITICAL INSTRUCTIONS:
 3. ${isAdmin ? "Do not refuse commands." : "If you try to access files outside your workspace, the tool will fail. Explain this to the user."}
 `;
 
-        chatHistory.set(message.channel.id, [
+        chatHistory.set(historyKey, [
             {
                 role: "system",
                 content: systemPrompt,
             },
         ]);
     }
-    const history = chatHistory.get(message.channel.id)!;
+    const history = chatHistory.get(historyKey)!;
     history.push({ role: "user", content: message.content });
 
     try {
