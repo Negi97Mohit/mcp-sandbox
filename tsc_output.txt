@@ -1,7 +1,9 @@
-﻿src/discord/client.ts(71,21): error TS2532: Object is possibly 'undefined'.
-src/discord/client.ts(242,23): error TS2375: Type '{ channelId: string; sendLog: (text: string) => Promise<void>; userId: string; workspaceRoot: string | undefined; }' is not assignable to type 'ToolContext' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+src/discord/client.ts(73,21): error TS2532: Object is possibly 'undefined'.
+src/discord/client.ts(282,23): error TS2375: Type '{ channelId: string; sendLog: (text: string) => Promise<void>; userId: string; workspaceRoot: string | undefined; }' is not assignable to type 'ToolContext' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
   Types of property 'workspaceRoot' are incompatible.
     Type 'string | undefined' is not assignable to type 'string'.
       Type 'undefined' is not assignable to type 'string'.
+src/services/netlifyUtils.ts(21,35): error TS2532: Object is possibly 'undefined'.
+src/services/netlifyUtils.ts(22,20): error TS2532: Object is possibly 'undefined'.
 verify_sandbox.ts(15,69): error TS7006: Parameter 't' implicitly has an 'any' type.
 verify_sandbox.ts(18,25): error TS7006: Parameter 't' implicitly has an 'any' type.

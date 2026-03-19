@@ -2,13 +2,15 @@ import { shellTools, handleShellCommand } from "./shell.js";
 import { fileTools, handleFileTool } from "./files.js";
 import { searchTools, handleSearchTool } from "./search.js";
 import { netlifyTools, handleNetlifyTool } from "./netlify.js";
+import { netlifyMonitorTools, handleNetlifyMonitorTool } from "./netlifyMonitor.js";
 import type { ToolContext } from "../types/toolContext.js";
 
 export const allTools = [
     ...shellTools,
     ...fileTools,
     ...searchTools,
-    ...netlifyTools
+    ...netlifyTools,
+    ...netlifyMonitorTools
 ];
 
 export async function executeToolCall(name: string, args: any, context?: ToolContext) {
@@ -24,6 +26,9 @@ export async function executeToolCall(name: string, args: any, context?: ToolCon
     }
     if (netlifyTools.some(t => t.function.name === name)) {
         return handleNetlifyTool(name, args, context);
+    }
+    if (netlifyMonitorTools.some(t => t.function.name === name)) {
+        return handleNetlifyMonitorTool(name, args, context);
     }
     return { error: `Tool ${name} not found` };
 }

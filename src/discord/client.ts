@@ -70,7 +70,7 @@ client.on("messageCreate", async (message) => {
 
 async function handleAdminCommand(message: Message) {
     const args = message.content.trim().split(/\s+/);
-    const command = args[0].toLowerCase();
+    const command = (args[0] || "").toLowerCase();
     const adminId = message.author.id;
 
     if (!permissionManager.isAdmin(adminId)) {
@@ -283,7 +283,7 @@ CRITICAL INSTRUCTIONS:
                     channelId: message.channel.id,
                     sendLog,
                     userId,
-                    workspaceRoot: isAdmin ? undefined : workspaceManager.ensureWorkspace(userId)
+                    ...(isAdmin ? {} : { workspaceRoot: workspaceManager.ensureWorkspace(userId) })
                 };
 
                 const toolResult = await executeToolCall(toolCall.function.name, args, context);

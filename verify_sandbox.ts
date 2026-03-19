@@ -12,10 +12,10 @@ async function runTests() {
     console.log(`📂 Created workspace: ${workspaceRoot}`);
 
     // Contexts
-    const adminContext = { channelId: 'admin-chan', sendLog: async (t) => console.log(`[LOG]: ${t}`) };
+    const adminContext = { channelId: 'admin-chan', sendLog: async (t: string) => console.log(`[LOG]: ${t}`) };
     const userContext = {
         channelId: 'user-chan',
-        sendLog: async (t) => console.log(`[LOG]: ${t}`),
+        sendLog: async (t: string) => console.log(`[LOG]: ${t}`),
         userId: testUserId,
         workspaceRoot: workspaceRoot
     };

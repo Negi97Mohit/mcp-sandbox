@@ -1,0 +1,2 @@
+src/services/netlifyUtils.ts(21,35): error TS2532: Object is possibly 'undefined'.
+src/services/netlifyUtils.ts(22,20): error TS2532: Object is possibly 'undefined'.
