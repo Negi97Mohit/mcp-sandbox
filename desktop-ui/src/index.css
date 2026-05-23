@@ -1,0 +1,316 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg-deep: #05050f;
+  --bg-surface: #0a0a1f;
+  --bg-card: rgba(18, 18, 38, 0.45);
+  --border: rgba(99, 102, 241, 0.12);
+  --border-hover: rgba(99, 102, 241, 0.35);
+  --primary: #6366f1;
+  --primary-glow: rgba(99, 102, 241, 0.15);
+  --secondary: #a855f7;
+  --accent: #ec4899;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Outfit', sans-serif;
+
+  /* Titlebar Variables */
+  --bg-titlebar: linear-gradient(90deg, rgba(8,8,20,0.99) 0%, rgba(14,14,32,0.99) 100%);
+  --border-titlebar: rgba(99, 102, 241, 0.15);
+  --text-titlebar: var(--text-primary);
+
+  /* Sidebar & Page Variables */
+  --bg-sidebar: rgba(8, 8, 20, 0.9);
+  --border-sidebar: rgba(99, 102, 241, 0.10);
+  --bg-page: rgba(5, 5, 15, 0.4);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  user-select: none;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.2);
+  border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.45);
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  transition: border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass:hover {
+  border-color: var(--border-hover);
+}
+
+.glow-btn {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: #ffffff;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.3);
+  transition: all 0.2s ease;
+  border-radius: 8px;
+}
+
+.glow-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px 0 rgba(99, 102, 241, 0.5);
+  opacity: 0.95;
+}
+
+.glow-btn:active {
+  transform: translateY(1px);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+.pulse-success {
+  width: 8px;
+  height: 8px;
+  background-color: var(--success);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--success);
+  animation: pulse-glow 2s infinite ease-in-out;
+}
+
+.pulse-stopped {
+  width: 8px;
+  height: 8px;
+  background-color: var(--text-muted);
+  border-radius: 50%;
+}
+
+.pulse-error {
+  width: 8px;
+  height: 8px;
+  background-color: var(--error);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--error);
+  animation: pulse-glow 1.5s infinite ease-in-out;
+}
+
+/* ==========================================
+   THEME DECLARATIONS
+   ========================================== */
+
+/* Brutalist Theme Overrides */
+[data-theme="brutalist"] {
+  --bg-deep: #f3f2ee;
+  --bg-surface: #ffffff;
+  --bg-card: #ffffff;
+  --border: #000000;
+  --border-hover: #000000;
+  --primary: #ff3e3e;
+  --secondary: #000000;
+  --text-primary: #000000;
+  --text-secondary: #111111;
+  --text-muted: #555555;
+  --bg-titlebar: #ffde4d;
+  --border-titlebar: #000000;
+  --text-titlebar: #000000;
+  --bg-sidebar: #f3f2ee;
+  --border-sidebar: #000000;
+  --bg-page: #ffde4d;
+}
+[data-theme="brutalist"] body {
+  background-color: #ffde4d !important; /* Bold Neo-brutalist Yellow deep canvas */
+  color: #000000 !important;
+}
+[data-theme="brutalist"] .glass {
+  background: #ffffff !important;
+  border: 3px solid #000000 !important;
+  border-radius: 0px !important;
+  box-shadow: 5px 5px 0px 0px #000000 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+[data-theme="brutalist"] .glass:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0px 0px #000000 !important;
+}
+[data-theme="brutalist"] .glow-btn {
+  background: #00e5ff !important; /* Saturated Neon Cyan */
+  color: #000000 !important;
+  border: 2.5px solid #000000 !important;
+  border-radius: 0px !important;
+  box-shadow: 3px 3px 0px 0px #000000 !important;
+  font-weight: 700 !important;
+}
+[data-theme="brutalist"] input, 
+[data-theme="brutalist"] select, 
+[data-theme="brutalist"] textarea {
+  border: 2px solid #000000 !important;
+  border-radius: 0px !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
+/* Chic Light Theme Overrides */
+[data-theme="light"] {
+  --bg-deep: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-card: rgba(255, 255, 255, 0.75);
+  --border: rgba(99, 102, 241, 0.15);
+  --border-hover: rgba(99, 102, 241, 0.38);
+  --primary: #4f46e5;
+  --secondary: #7c3aed;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --bg-titlebar: #ffffff;
+  --border-titlebar: rgba(99, 102, 241, 0.15);
+  --text-titlebar: var(--text-primary);
+  --bg-sidebar: #f1f5f9;
+  --border-sidebar: rgba(99, 102, 241, 0.12);
+  --bg-page: #f8fafc;
+}
+[data-theme="light"] body {
+  background-color: var(--bg-deep) !important;
+  color: var(--text-primary) !important;
+}
+[data-theme="light"] .glass {
+  box-shadow: 0 8px 32px 0 rgba(148, 163, 184, 0.08) !important;
+}
+
+/* Retro Chic Theme Overrides */
+[data-theme="chic"] {
+  --bg-deep: #fcfaf2;
+  --bg-surface: #f7f4eb;
+  --bg-card: rgba(244, 239, 226, 0.85);
+  --border: rgba(140, 98, 57, 0.2);
+  --border-hover: rgba(140, 98, 57, 0.45);
+  --primary: #8c6239;
+  --secondary: #6b7a5a;
+  --text-primary: #3d2a1d;
+  --text-secondary: #5c4d3c;
+  --text-muted: #8a7d6e;
+  --bg-titlebar: #f7f4eb;
+  --border-titlebar: rgba(140, 98, 57, 0.2);
+  --text-titlebar: var(--text-primary);
+  --bg-sidebar: #f0ebe0;
+  --border-sidebar: rgba(140, 98, 57, 0.18);
+  --bg-page: #fcfaf2;
+}
+[data-theme="chic"] body {
+  background-color: var(--bg-deep) !important;
+  color: var(--text-primary) !important;
+}
+[data-theme="chic"] .glass {
+  box-shadow: 0 8px 32px 0 rgba(140, 98, 57, 0.05) !important;
+}
+
+/* Ultra-Minimal Theme Overrides */
+[data-theme="minimal"] {
+  --bg-deep: #000000;
+  --bg-surface: #0a0a0a;
+  --bg-card: #121212;
+  --border: #262626;
+  --border-hover: #404040;
+  --primary: #ffffff;
+  --secondary: #a3a3a3;
+  --text-primary: #ffffff;
+  --text-secondary: #a3a3a3;
+  --text-muted: #525252;
+  --bg-titlebar: #0a0a0a;
+  --border-titlebar: #262626;
+  --text-titlebar: var(--text-primary);
+  --bg-sidebar: #0a0a0a;
+  --border-sidebar: #262626;
+  --bg-page: #000000;
+}
+[data-theme="minimal"] body {
+  background-color: var(--bg-deep) !important;
+  color: var(--text-primary) !important;
+}
+[data-theme="minimal"] .glass {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-radius: 4px !important;
+  box-shadow: none !important;
+}
+[data-theme="minimal"] .glow-btn {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border-radius: 4px !important;
+  box-shadow: none !important;
+}
+
+/* Futuristic Modern Theme Overrides */
+[data-theme="modern"] {
+  --bg-deep: #06010f;
+  --bg-surface: #0b021d;
+  --bg-card: rgba(18, 4, 38, 0.6);
+  --border: rgba(0, 242, 254, 0.25);
+  --border-hover: rgba(0, 242, 254, 0.55);
+  --primary: #00f2fe;
+  --secondary: #fe019a;
+  --text-primary: #ffffff;
+  --text-secondary: #a5b4fc;
+  --text-muted: #6366f1;
+  --bg-titlebar: #0b021d;
+  --border-titlebar: rgba(0, 242, 254, 0.25);
+  --text-titlebar: var(--text-primary);
+  --bg-sidebar: #080118;
+  --border-sidebar: rgba(0, 242, 254, 0.15);
+  --bg-page: #06010f;
+}
+[data-theme="modern"] body {
+  background-color: var(--bg-deep) !important;
+  color: var(--text-primary) !important;
+}
+[data-theme="modern"] .glass {
+  box-shadow: 0 0 20px rgba(0, 242, 254, 0.12) !important;
+}
+

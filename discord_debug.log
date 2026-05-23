@@ -1,0 +1,6 @@
+=== DISCORD AGENT DEBUG SESSION STARTED 2026-05-23T13:02:40.548Z ===
+[2026-05-23T13:02:43.192Z] 🤖 Reasoning Bot Online: DevOps Agent#5650
+[2026-05-23T13:02:43.621Z] 📊 Generating startup health report...
+[2026-05-23T13:02:45.205Z] [messageCreate Event] Fired! Author: DevOps Agent#5650 (1464211455791468697), Bot: true
+[2026-05-23T13:02:45.208Z] [handleMessage] Ignored bot message from DevOps Agent#5650
+[2026-05-23T13:02:45.222Z] ✅ Health report sent to admin (Status: healthy)

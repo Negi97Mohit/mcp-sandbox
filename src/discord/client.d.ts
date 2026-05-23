@@ -1,3 +1,4 @@
 import { Client } from "discord.js";
+export declare function logDebug(message: string): void;
 export declare const client: Client<boolean>;
 //# sourceMappingURL=client.d.ts.map

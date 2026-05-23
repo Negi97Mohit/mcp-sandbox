@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
+import { workspaceStore } from "../core/WorkspaceStore.js";
 export const searchTools = [
     {
         type: "function",
@@ -24,7 +25,7 @@ export const searchTools = [
 ];
 export async function handleSearchTool(name, args) {
     if (name === "find_git_repos") {
-        const startPath = args.start_path || process.env.USERPROFILE || process.env.HOME || ".";
+        const startPath = args.start_path || workspaceStore.getActivePath() || process.env.USERPROFILE || process.env.HOME || ".";
         const maxDepth = args.max_depth || 5;
         console.log(`🔎 Searching for Git repos starting at: ${startPath}`);
         const foundRepos = [];

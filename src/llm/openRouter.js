@@ -1,5 +1,18 @@
 import { CONFIG } from "../config/env.js";
 import { allTools } from "../tools/index.js";
+// ─── Free-model fallback chain ───────────────────────────────────────────────
+// When the primary model hits its daily limit we automatically retry with the
+// next model in the list.  All models are free-tier on OpenRouter.
+const FREE_MODEL_FALLBACK_CHAIN = [
+    "nvidia/nemotron-3-nano-30b-a3b:free",
+    "meta-llama/llama-3.2-3b-instruct:free",
+    "google/gemma-3-1b-it:free",
+    "mistralai/mistral-7b-instruct:free",
+    "qwen/qwen3-0.6b:free",
+    "microsoft/phi-3-mini-128k-instruct:free",
+];
+// Track which models are currently rate-limited and when they reset
+const modelRateLimits = new Map(); // model -> resetMs
 // Regex to parse tool calls like [tool_name(arg="value")] OR tool_name(arg="value")
 // We make the outer brackets optional in a smarter way or handle it in the parser loop
 const TOOL_CALL_REGEX = /(?:\[)?(\w+)\(([^)]*)\)(?:\])?/g;
@@ -96,7 +109,83 @@ function parseToolCallsFromText(text) {
     }
     return calls.length > 0 ? calls : null;
 }
+/**
+ * Build an ordered list of models to try: primary config model first,
+ * then the fallback chain (skipping already rate-limited models).
+ */
+function buildModelList() {
+    const primary = CONFIG.MODEL_NAME;
+    const now = Date.now();
+    // Remove expired rate-limits
+    for (const [model, resetMs] of modelRateLimits.entries()) {
+        if (now >= resetMs)
+            modelRateLimits.delete(model);
+    }
+    const chain = [primary, ...FREE_MODEL_FALLBACK_CHAIN.filter(m => m !== primary)];
+    // Put non-limited models first, exhausted ones at the end (as last resort attempts)
+    return [
+        ...chain.filter(m => !modelRateLimits.has(m)),
+        ...chain.filter(m => modelRateLimits.has(m)),
+    ];
+}
+/**
+ * Call OpenRouter with automatic free-model fallback on 429 rate-limit errors.
+ *
+ * If ALL models are exhausted a RateLimitError is thrown with `allModelsExhausted: true`
+ * and a `resetAt` timestamp so callers can show a meaningful message.
+ */
 export async function callOpenRouter(messages) {
+    const modelsToTry = buildModelList();
+    let lastError = null;
+    let earliestReset = null;
+    for (const model of modelsToTry) {
+        try {
+            const message = await callOpenRouterWithModel(messages, model);
+            // If we used a fallback, log it
+            if (model !== CONFIG.MODEL_NAME) {
+                console.log(`🔄 Used fallback model: ${model}`);
+            }
+            return message;
+        }
+        catch (err) {
+            lastError = err;
+            // Parse 429 metadata to track reset time
+            if (err.statusCode === 429 || err.message?.includes("Rate limit exceeded") || err.message?.includes("429")) {
+                const resetMs = err.resetMs ?? null;
+                if (resetMs) {
+                    modelRateLimits.set(model, resetMs);
+                    const resetDate = new Date(resetMs);
+                    if (!earliestReset || resetDate < earliestReset) {
+                        earliestReset = resetDate;
+                    }
+                }
+                else {
+                    // Default: mark as limited for 1 hour
+                    const fallbackReset = Date.now() + 3600_000;
+                    modelRateLimits.set(model, fallbackReset);
+                    const resetDate = new Date(fallbackReset);
+                    if (!earliestReset || resetDate < earliestReset) {
+                        earliestReset = resetDate;
+                    }
+                }
+                console.warn(`⚠️ Model ${model} rate limited. Trying next fallback...`);
+                continue; // Try next model
+            }
+            // For non-rate-limit errors, throw immediately
+            throw err;
+        }
+    }
+    // All models exhausted — throw a descriptive RateLimitError
+    const rlErr = new Error("All free models are rate-limited. Please wait or add credits.");
+    rlErr.isRateLimit = true;
+    rlErr.resetAt = earliestReset;
+    rlErr.allModelsExhausted = true;
+    throw rlErr;
+}
+/**
+ * Raw single-model call. Throws with statusCode + resetMs attached on 429.
+ */
+async function callOpenRouterWithModel(messages, model) {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -106,7 +195,7 @@ export async function callOpenRouter(messages) {
             "X-Title": "DevOps Agent",
         },
         body: JSON.stringify({
-            model: CONFIG.MODEL_NAME,
+            model,
             messages: messages,
             tools: allTools,
             tool_choice: "auto",
@@ -114,7 +203,26 @@ export async function callOpenRouter(messages) {
     });
     if (!response.ok) {
         const errorBody = await response.text();
-        throw new Error(`OpenRouter API Error: ${response.statusText} - ${errorBody}`);
+        const err = new Error(`OpenRouter API Error: ${response.statusText} - ${errorBody}`);
+        err.statusCode = response.status;
+        // Extract rate-limit reset header if present
+        const resetHeader = response.headers.get("X-RateLimit-Reset");
+        if (resetHeader) {
+            err.resetMs = parseInt(resetHeader, 10);
+        }
+        else {
+            // Try parsing from JSON body
+            try {
+                const parsed = JSON.parse(errorBody);
+                const resetStr = parsed?.error?.metadata?.headers?.["X-RateLimit-Reset"];
+                if (resetStr)
+                    err.resetMs = parseInt(resetStr, 10);
+            }
+            catch {
+                // ignore
+            }
+        }
+        throw err;
     }
     const data = await response.json();
     if (!data.choices || data.choices.length === 0) {
@@ -124,6 +232,7 @@ export async function callOpenRouter(messages) {
     const message = data.choices[0].message;
     // Debug: Log what we got
     console.log("📡 API Response:", JSON.stringify({
+        model,
         content: message.content?.substring(0, 100),
         tool_calls: message.tool_calls,
         hasToolCalls: !!message.tool_calls,

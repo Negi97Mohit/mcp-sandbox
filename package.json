@@ -2,9 +2,17 @@
   "name": "mcp-sandbox",
   "version": "1.0.0",
   "type": "module",
-  "main": "index.js",
+  "main": "dist-electron/electron/main.js",
   "scripts": {
     "dev": "npx tsx src/index.ts",
+    "dev:desktop": "concurrently \"cd desktop-ui && npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
+    "build:ui": "cd desktop-ui && npm run build",
+    "build:electron": "npx tsc -p electron/tsconfig.json && node -e \"const fs = require('fs'); fs.copyFileSync('electron/package.json', 'dist-electron/package.json');\"",
+    "build:all": "npm run build:ui && npm run build:electron",
+    "dist": "npm run build:all && electron-builder",
+    "dist:win": "npm run build:all && electron-builder --win",
+    "dist:mac": "npm run build:all && electron-builder --mac",
+    "dist:linux": "npm run build:all && electron-builder --linux",
     "start": "node dist/src/index.js",
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -26,6 +34,42 @@
     "typescript": "^5.9.3"
   },
   "devDependencies": {
-    "tsx": "^4.21.0"
+    "concurrently": "^9.2.1",
+    "electron": "^42.2.0",
+    "electron-builder": "^26.8.1",
+    "tsx": "^4.21.0",
+    "wait-on": "^9.0.10"
+  },
+  "build": {
+    "appId": "com.mcpsandbox.desktop",
+    "productName": "MCP Sandbox",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist-electron/electron/**/*.js",
+      "dist-electron/src/**/*.js",
+      "dist-electron/package.json",
+      "desktop-ui/dist/**/*",
+      "assets/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icon.icns"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   }
 }

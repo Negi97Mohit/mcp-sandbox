@@ -8,18 +8,40 @@ import { workspaceManager } from "../core/WorkspaceManager.js";
 import { generateHealthReport, generateHistoryEmbed } from "../health/healthCheck.js";
 import { recordMessage, recordToolCall, recordError, recordResponseTime } from "../health/statsTracker.js";
 import { generateChartEmbeds, generateStatsEmbed } from "../health/chartGenerator.js";
+import * as fs from "fs";
+import * as path from "path";
+// Initialize a debug log file in process.cwd()
+const debugLogPath = path.join(process.cwd(), "discord_debug.log");
+try {
+    fs.writeFileSync(debugLogPath, `=== DISCORD AGENT DEBUG SESSION STARTED ${new Date().toISOString()} ===\n`, "utf-8");
+}
+catch (e) {
+    console.error("Failed to initialize discord_debug.log:", e);
+}
+export function logDebug(message) {
+    const timestamp = new Date().toISOString();
+    const formatted = `[${timestamp}] ${message}\n`;
+    console.log(formatted.trim());
+    try {
+        fs.appendFileSync(debugLogPath, formatted, "utf-8");
+    }
+    catch (e) {
+        console.error("Failed to write to discord_debug.log:", e);
+    }
+}
 export const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.DirectMessages,
         GatewayIntentBits.MessageContent,
     ],
-    partials: [Partials.Channel],
+    partials: [Partials.Channel, Partials.Message],
 });
 // Store history WITH reasoning details
 const chatHistory = new Map();
 client.once("ready", async () => {
-    console.log(`🤖 Reasoning Bot Online: ${client.user?.tag}`);
+    logDebug(`🤖 Reasoning Bot Online: ${client.user?.tag}`);
     // Send startup health report to admin
     await sendStartupHealthReport();
 });
@@ -31,34 +53,41 @@ async function sendStartupHealthReport() {
         // Get admin user ID
         const adminId = CONFIG.ALLOWED_USER_ID;
         if (!adminId) {
-            console.log("⚠️ No ALLOWED_USER_ID set, skipping startup health report");
+            logDebug("⚠️ No ALLOWED_USER_ID set, skipping startup health report");
             return;
         }
         // Try to DM the admin
         const adminUser = await client.users.fetch(adminId);
         if (!adminUser) {
-            console.log("⚠️ Could not find admin user for health report");
+            logDebug("⚠️ Could not find admin user for health report");
             return;
         }
-        console.log("📊 Generating startup health report...");
+        logDebug("📊 Generating startup health report...");
         const { embed, overallStatus } = await generateHealthReport();
         const dmChannel = await adminUser.createDM();
         await dmChannel.send({
             content: `🌅 **Good morning!** Here's your daily bot health report:`,
             embeds: [embed]
         });
-        console.log(`✅ Health report sent to admin (Status: ${overallStatus})`);
+        logDebug(`✅ Health report sent to admin (Status: ${overallStatus})`);
     }
     catch (error) {
         console.error("❌ Failed to send startup health report:", error);
+        logDebug(`❌ Failed to send startup health report: ${error}`);
     }
 }
 client.on("messageCreate", async (message) => {
-    await handleMessage(message);
+    logDebug(`[messageCreate Event] Fired! Author: ${message.author.tag} (${message.author.id}), Bot: ${message.author.bot}`);
+    try {
+        await handleMessage(message);
+    }
+    catch (e) {
+        logDebug(`[messageCreate Event Error] Fatal error in event handler: ${e.message}`);
+    }
 });
 async function handleAdminCommand(message) {
     const args = message.content.trim().split(/\s+/);
-    const command = args[0].toLowerCase();
+    const command = (args[0] || "").toLowerCase();
     const adminId = message.author.id;
     if (!permissionManager.isAdmin(adminId)) {
         await message.reply("❌ You do not have permission to run admin commands.");
@@ -142,7 +171,7 @@ async function handleAdminCommand(message) {
                 await message.reply({ embeds: [embed] });
                 // Send chart embeds (max 10 per message)
                 for (const chartEmbed of chartEmbeds) {
-                    if (message.channel.isSendable()) {
+                    if (typeof message.channel.send === 'function') {
                         await message.channel.send({ embeds: [chartEmbed] });
                     }
                 }
@@ -158,24 +187,78 @@ async function handleAdminCommand(message) {
     }
 }
 async function handleMessage(message) {
-    if (message.author.bot)
+    if (message.author.bot) {
+        logDebug(`[handleMessage] Ignored bot message from ${message.author.tag}`);
         return;
+    }
+    logDebug(`[handleMessage] Received message from ${message.author.tag} (${message.author.id})`);
+    logDebug(`[handleMessage] Raw Message Content: "${message.content}"`);
+    logDebug(`[handleMessage] Guild: ${message.guild ? `${message.guild.name} (${message.guild.id})` : "Direct Message (DM)"}`);
+    logDebug(`[handleMessage] Channel Type: ${message.channel.type}`);
+    // Log the mentions details
+    if (message.mentions.users.size > 0) {
+        logDebug(`[handleMessage] Mentions User IDs: ${Array.from(message.mentions.users.keys()).join(", ")}`);
+        logDebug(`[handleMessage] Mentions User Tags: ${message.mentions.users.map(u => u.tag).join(", ")}`);
+    }
+    else {
+        logDebug(`[handleMessage] Mentions: None`);
+    }
+    if (client.user) {
+        logDebug(`[handleMessage] Bot User ID is: ${client.user.id}, Username: ${client.user.tag}`);
+    }
+    else {
+        logDebug(`[handleMessage] Bot User is not initialized yet!`);
+    }
     // 0. Handle Admin Commands
     if (message.content.startsWith("!")) {
+        logDebug(`[handleMessage] Running admin command: ${message.content}`);
         await handleAdminCommand(message);
         return;
     }
+    // Only listen to Direct Messages (DMs) OR explicit mentions in server guilds
+    const isDM = !message.guild;
+    const isMentioned = client.user ? message.mentions.has(client.user) : false;
+    logDebug(`[handleMessage] isDM: ${isDM}, isMentioned: ${isMentioned}`);
+    if (!isDM && !isMentioned) {
+        logDebug(`[handleMessage] Ignored message (neither DM nor explicit mention).`);
+        return; // Ignore other server conversation to save tokens/costs
+    }
     const userId = message.author.id;
+    const canRead = permissionManager.canRead(userId);
+    const role = permissionManager.getRole(userId);
+    logDebug(`[handleMessage] userId: ${userId}, canRead: ${canRead}, role: ${role}`);
     // 1. Permission Check
-    if (!permissionManager.canRead(userId)) {
-        // Optional: Reply once or maintain silence. Silence is safer/cleaner.
-        // If they DM the bot, maybe reply? For now, silence.
+    if (!canRead) {
+        logDebug(`[handleMessage] Access Denied for ${message.author.tag} (${userId})`);
+        try {
+            await message.reply(`🚫 **Access Denied**: You do not have permission to interact with this DevOps Agent.\n` +
+                `Please ask an Administrator to grant you access using: \`!grant <@${userId}> <read|write|admin>\``);
+            logDebug(`[handleMessage] Replied Access Denied successfully.`);
+        }
+        catch (e) {
+            logDebug(`[handleMessage] Failed to send permission warning: ${e.message}`);
+        }
         return;
     }
     // Type guard for text-based channels
-    if (!message.channel.isSendable())
+    if (typeof message.channel.send !== 'function') {
+        logDebug(`[handleMessage] Channel send method is missing!`);
         return;
-    await message.channel.sendTyping();
+    }
+    logDebug(`[handleMessage] Triggering sendTyping...`);
+    try {
+        await message.channel.sendTyping();
+    }
+    catch (e) {
+        logDebug(`[handleMessage] sendTyping warning: ${e.message}`);
+    }
+    // Clean up content: strip the bot mention tag so the AI doesn't get confused by tags
+    let cleanContent = message.content;
+    if (client.user) {
+        const mentionRegex = new RegExp(`<@!?${client.user.id}>`, 'g');
+        cleanContent = cleanContent.replace(mentionRegex, '').trim();
+    }
+    logDebug(`[handleMessage] Clean Content: "${cleanContent}"`);
     // Use composite key: channel + user for isolated prompts per user
     const historyKey = `${message.channel.id}:${userId}`;
     if (!chatHistory.has(historyKey)) {
@@ -204,7 +287,7 @@ CRITICAL INSTRUCTIONS:
         ]);
     }
     const history = chatHistory.get(historyKey);
-    history.push({ role: "user", content: message.content });
+    history.push({ role: "user", content: cleanContent });
     try {
         // Record message for stats
         await recordMessage();
@@ -236,7 +319,7 @@ CRITICAL INSTRUCTIONS:
                 const sendLog = async (text) => {
                     const chunks = smartSplitMessage(text, 1900);
                     for (const chunk of chunks) {
-                        if (message.channel.isSendable()) {
+                        if (typeof message.channel.send === 'function') {
                             await message.channel.send(chunk);
                         }
                     }
@@ -247,7 +330,7 @@ CRITICAL INSTRUCTIONS:
                     channelId: message.channel.id,
                     sendLog,
                     userId,
-                    workspaceRoot: isAdmin ? undefined : workspaceManager.ensureWorkspace(userId)
+                    ...(isAdmin ? {} : { workspaceRoot: workspaceManager.ensureWorkspace(userId) })
                 };
                 const toolResult = await executeToolCall(toolCall.function.name, args, context);
                 // Record tool call for stats
@@ -280,7 +363,7 @@ CRITICAL INSTRUCTIONS:
             }
             else {
                 for (const chunk of chunks) {
-                    if (message.channel.isSendable()) {
+                    if (typeof message.channel.send === 'function') {
                         await message.channel.send(chunk);
                     }
                 }
@@ -304,7 +387,7 @@ CRITICAL INSTRUCTIONS:
             }
             else {
                 for (const chunk of chunks) {
-                    if (message.channel.isSendable()) {
+                    if (typeof message.channel.send === 'function') {
                         await message.channel.send(chunk);
                     }
                 }
@@ -312,13 +395,44 @@ CRITICAL INSTRUCTIONS:
         }
     }
     catch (error) {
+        logDebug(`[handleMessage Error] Caught error: ${error.stack || error.message}`);
         console.error("❌ Error:", error);
         await recordError();
         try {
-            await message.reply("⚠️ Something went wrong. Check the console for details.");
+            // ─── Rate-limit: all free models exhausted ───────────────────────
+            if (error.isRateLimit && error.allModelsExhausted) {
+                let resetMsg = "";
+                if (error.resetAt) {
+                    const resetDate = error.resetAt;
+                    const nowMs = Date.now();
+                    const diffMs = resetDate.getTime() - nowMs;
+                    if (diffMs > 0) {
+                        const hours = Math.floor(diffMs / 3_600_000);
+                        const mins = Math.floor((diffMs % 3_600_000) / 60_000);
+                        resetMsg = `\n⏰ **Resets in:** ${hours}h ${mins}m (at <t:${Math.floor(resetDate.getTime() / 1000)}:T>)`;
+                    }
+                }
+                await message.reply(`🚫 **Daily Rate Limit Reached**\n` +
+                    `All free AI models have hit their daily request limit.${resetMsg}\n\n` +
+                    `**Options:**\n` +
+                    `• Wait for the limit to reset (usually midnight UTC)\n` +
+                    `• Add credits at <https://openrouter.ai> to unlock more requests\n` +
+                    `• Change \`MODEL_NAME\` in your \`.env\` to a paid model`);
+                logDebug(`[handleMessage Error] Rate limit message sent to Discord.`);
+                return;
+            }
+            // ─── Generic 429 from a single model ─────────────────────────────
+            if (error.statusCode === 429 || (error.message?.includes("429") && error.message?.includes("Rate limit"))) {
+                await message.reply(`⚠️ **Rate Limited** — The AI model is temporarily unavailable.\n` +
+                    `Trying fallback models automatically. Please resend your message in a moment.`);
+                logDebug(`[handleMessage Error] Single-model rate limit message sent.`);
+                return;
+            }
+            // ─── Generic fallback error ───────────────────────────────────────
+            await message.reply(`⚠️ **Something went wrong.**\n\`\`\`${error.message?.substring(0, 300) ?? "Unknown error"}\`\`\``);
         }
-        catch {
-            console.error("Could not send error message to Discord");
+        catch (replyErr) {
+            logDebug(`[handleMessage Error] Could not send error message to Discord: ${replyErr.message}`);
         }
     }
 }

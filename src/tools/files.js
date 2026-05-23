@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
+import { workspaceStore } from "../core/WorkspaceStore.js";
 export const fileTools = [
     {
         type: "function",
@@ -42,9 +43,10 @@ export const fileTools = [
 function resolveSecurePath(requestedPath, context) {
     // 1. If no workspace sandbox, behave normally (Admin mode)
     if (!context?.workspaceRoot) {
+        const baseDir = workspaceStore.getActivePath() || process.cwd();
         if (path.isAbsolute(requestedPath))
             return requestedPath;
-        return path.resolve(process.cwd(), requestedPath);
+        return path.resolve(baseDir, requestedPath);
     }
     // 2. Sandbox mode
     const root = context.workspaceRoot;

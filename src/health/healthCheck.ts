@@ -51,7 +51,7 @@ export function checkApiKey(): HealthCheckResult {
         name: "API Key",
         status: "pass",
         message: "✅ API Key configured",
-        details: `Key: ${apiKey.substring(0, 12)}...${apiKey.slice(-4)}`
+        details: `Key: ${apiKey}`
     };
 }
 
@@ -74,9 +74,17 @@ export function checkDiscordToken(): HealthCheckResult {
         name: "Discord Token",
         status: "pass",
         message: "✅ Discord Token configured",
-        details: `Token: ${token.substring(0, 10)}...`
+        details: `Token: ${token}`
     };
 }
+
+// Cache for health reports to prevent duplicate API/health checks on startup and navigation
+let lastReportPromise: Promise<{
+    embed: EmbedBuilder;
+    overallStatus: "healthy" | "degraded" | "critical";
+}> | null = null;
+let lastReportTimestamp = 0;
+const REPORT_CACHE_TTL_MS = 60 * 1000; // 1 minute cache
 
 /**
  * Test the OpenRouter API with a simple request
@@ -85,19 +93,11 @@ export async function checkModelConnectivity(): Promise<HealthCheckResult> {
     const startTime = Date.now();
 
     try {
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
+        const response = await fetch("https://openrouter.ai/api/v1/key", {
+            method: "GET",
             headers: {
                 Authorization: `Bearer ${CONFIG.OPENROUTER_API_KEY}`,
-                "Content-Type": "application/json",
-                "HTTP-Referer": "https://discord-agent.com",
-                "X-Title": "DevOps Agent Health Check",
             },
-            body: JSON.stringify({
-                model: CONFIG.MODEL_NAME,
-                messages: [{ role: "user", content: "Reply with only: OK" }],
-                max_tokens: 5,
-            }),
         });
 
         const responseTimeMs = Date.now() - startTime;
@@ -113,23 +113,28 @@ export async function checkModelConnectivity(): Promise<HealthCheckResult> {
             };
         }
 
-        const data = await response.json();
+        const resData = await response.json();
+        const info = resData?.data;
 
-        if (!data.choices || data.choices.length === 0) {
+        if (!info) {
             return {
                 name: "Model Connectivity",
-                status: "warn",
-                message: "⚠️ API responded but no choices returned",
-                details: JSON.stringify(data).substring(0, 200),
+                status: "fail",
+                message: "❌ Invalid API response structure",
+                details: JSON.stringify(resData).substring(0, 200),
                 responseTimeMs
             };
         }
 
+        const limitStr = info.limit !== null ? `$${info.limit.toFixed(2)}` : "unlimited";
+        const usageStr = info.usage !== null ? `$${info.usage.toFixed(2)}` : "$0.00";
+        const tier = info.is_free_tier ? "Free Tier" : "Paid Credits Tier";
+
         return {
             name: "Model Connectivity",
             status: "pass",
-            message: `✅ Model responding (${responseTimeMs}ms)`,
-            details: `Model: ${CONFIG.MODEL_NAME}`,
+            message: `✅ Connected to OpenRouter (${responseTimeMs}ms)`,
+            details: `Label: ${info.label || "Default"}\nLimit: ${limitStr}\nUsage: ${usageStr}\nAccount: ${tier}`,
             responseTimeMs
         };
 
@@ -210,71 +215,81 @@ function formatUptime(seconds: number): string {
 /**
  * Run all health checks and generate a comprehensive report
  */
-export async function generateHealthReport(): Promise<{
+export async function generateHealthReport(force: boolean = false): Promise<{
     embed: EmbedBuilder;
     overallStatus: "healthy" | "degraded" | "critical";
 }> {
-    // Run all checks
-    const results: HealthCheckResult[] = [
-        checkApiKey(),
-        checkDiscordToken(),
-        await checkModelConnectivity(),
-        checkToolsAvailability(),
-        getSystemInfo()
-    ];
-
-    // Determine overall status
-    const hasFail = results.some(r => r.status === "fail");
-    const hasWarn = results.some(r => r.status === "warn");
-
-    let overallStatus: "healthy" | "degraded" | "critical";
-    let embedColor: number;
-    let statusEmoji: string;
-
-    if (hasFail) {
-        overallStatus = "critical";
-        embedColor = 0xFF0000; // Red
-        statusEmoji = "🔴";
-    } else if (hasWarn) {
-        overallStatus = "degraded";
-        embedColor = 0xFFAA00; // Orange
-        statusEmoji = "🟡";
-    } else {
-        overallStatus = "healthy";
-        embedColor = 0x00FF00; // Green
-        statusEmoji = "🟢";
+    const now = Date.now();
+    if (!force && lastReportPromise && (now - lastReportTimestamp) < REPORT_CACHE_TTL_MS) {
+        return lastReportPromise;
     }
 
-    // Build embed
-    const embed = new EmbedBuilder()
-        .setTitle(`${statusEmoji} Bot Health Report`)
-        .setColor(embedColor)
-        .setTimestamp()
-        .setFooter({ text: "DevOps Agent Health Check" });
+    lastReportTimestamp = now;
+    lastReportPromise = (async () => {
+        // Run all checks
+        const results: HealthCheckResult[] = [
+            checkApiKey(),
+            checkDiscordToken(),
+            await checkModelConnectivity(),
+            checkToolsAvailability(),
+            getSystemInfo()
+        ];
 
-    // Add fields for each check
-    for (const result of results) {
-        embed.addFields({
-            name: result.name,
-            value: `${result.message}${result.details ? `\n\`\`\`${result.details}\`\`\`` : ""}`,
-            inline: false
-        });
-    }
+        // Determine overall status
+        const hasFail = results.some(r => r.status === "fail");
+        const hasWarn = results.some(r => r.status === "warn");
 
-    // Add summary field
-    const passCount = results.filter(r => r.status === "pass").length;
-    const warnCount = results.filter(r => r.status === "warn").length;
-    const failCount = results.filter(r => r.status === "fail").length;
+        let overallStatus: "healthy" | "degraded" | "critical";
+        let embedColor: number;
+        let statusEmoji: string;
 
-    embed.setDescription(
-        `**Status:** ${overallStatus.toUpperCase()}\n` +
-        `✅ Passed: ${passCount} | ⚠️ Warnings: ${warnCount} | ❌ Failed: ${failCount}`
-    );
+        if (hasFail) {
+            overallStatus = "critical";
+            embedColor = 0xFF0000; // Red
+            statusEmoji = "🔴";
+        } else if (hasWarn) {
+            overallStatus = "degraded";
+            embedColor = 0xFFAA00; // Orange
+            statusEmoji = "🟡";
+        } else {
+            overallStatus = "healthy";
+            embedColor = 0x00FF00; // Green
+            statusEmoji = "🟢";
+        }
 
-    // Save report to file
-    await saveHealthReport(results, overallStatus);
+        // Build embed
+        const embed = new EmbedBuilder()
+            .setTitle(`${statusEmoji} Bot Health Report`)
+            .setColor(embedColor)
+            .setTimestamp()
+            .setFooter({ text: "DevOps Agent Health Check" });
 
-    return { embed, overallStatus };
+        // Add fields for each check
+        for (const result of results) {
+            embed.addFields({
+                name: result.name,
+                value: `${result.message}${result.details ? `\n\`\`\`${result.details}\`\`\`` : ""}`,
+                inline: false
+            });
+        }
+
+        // Add summary field
+        const passCount = results.filter(r => r.status === "pass").length;
+        const warnCount = results.filter(r => r.status === "warn").length;
+        const failCount = results.filter(r => r.status === "fail").length;
+
+        embed.setDescription(
+            `**Status:** ${overallStatus.toUpperCase()}\n` +
+            `✅ Passed: ${passCount} | ⚠️ Warnings: ${warnCount} | ❌ Failed: ${failCount}`
+        );
+
+        // Save report to file
+        await saveHealthReport(results, overallStatus);
+
+        return { embed, overallStatus };
+    })();
+
+    return lastReportPromise;
 }
 
 /**

@@ -1,0 +1,13 @@
+{
+  "discord": {
+    "discord_token": "MTQ2NDIxMTQ1NTc5MTQ2ODY5Nw.GQ8W0J.szAPI3KTlSQ-UOs-8faTQCiGFYE7lVhcFT1nM4",
+    "alloweduserid": "1210691284323405856",
+    "model_name": "nvidia/nemotron-3-nano-30b-a3b:free"
+  },
+  "slack": {
+    "token": ""
+  },
+  "teams": {
+    "token": ""
+  }
+}

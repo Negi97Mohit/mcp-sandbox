@@ -1,6 +1,7 @@
 import { spawn } from "child_process";
 import * as path from "path";
 import * as fs from "fs";
+import { workspaceStore } from "../core/WorkspaceStore.js";
 export const shellTools = [
     {
         type: "function",
@@ -20,7 +21,7 @@ export const shellTools = [
 // Persistent state: Channel ID -> Current Working Directory
 const shellSessions = new Map();
 function getSessionCwd(channelId) {
-    return shellSessions.get(channelId) || process.cwd();
+    return shellSessions.get(channelId) || workspaceStore.getActivePath() || process.cwd();
 }
 function setSessionCwd(channelId, newPath) {
     shellSessions.set(channelId, newPath);
@@ -30,14 +31,16 @@ export async function handleShellCommand(args, context) {
     const channelId = context?.channelId || "default";
     // Initialize session if needed
     if (!shellSessions.has(channelId)) {
-        // If sandboxed, start in workspace root. Else CWD.
-        const initialDir = context?.workspaceRoot ? context.workspaceRoot : process.cwd();
+        // If sandboxed, start in workspace root. Else active workspace or CWD.
+        const initialDir = context?.workspaceRoot
+            ? context.workspaceRoot
+            : (workspaceStore.getActivePath() || process.cwd());
         setSessionCwd(channelId, initialDir);
     }
     let currentDir = getSessionCwd(channelId);
     // FIX: Fallback if currentDir doesn't exist (deleted folder)
     if (!fs.existsSync(currentDir)) {
-        currentDir = context?.workspaceRoot || process.cwd();
+        currentDir = context?.workspaceRoot || workspaceStore.getActivePath() || process.cwd();
         setSessionCwd(channelId, currentDir);
     }
     // 1. Handle 'cd' manually

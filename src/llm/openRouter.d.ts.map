@@ -1,1 +1,1 @@
-{"version":3,"file":"openRouter.d.ts","sourceRoot":"","sources":["openRouter.ts"],"names":[],"mappings":"AAyGA,wBAAsB,cAAc,CAAC,QAAQ,EAAE,GAAG,EAAE,gBA0FnD"}
+{"version":3,"file":"openRouter.d.ts","sourceRoot":"","sources":["openRouter.ts"],"names":[],"mappings":"AAkBA,MAAM,WAAW,cAAe,SAAQ,KAAK;IACzC,WAAW,EAAE,IAAI,CAAC;IAClB,OAAO,EAAE,IAAI,GAAG,IAAI,CAAC;IACrB,kBAAkB,EAAE,OAAO,CAAC;CAC/B;AA6HD;;;;;GAKG;AACH,wBAAsB,cAAc,CAAC,QAAQ,EAAE,GAAG,EAAE,GAAG,OAAO,CAAC,GAAG,CAAC,CAiDlE"}
