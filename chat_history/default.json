@@ -100,5 +100,29 @@
     "id": "msg_1779540339509_a",
     "role": "assistant",
     "content": "Hey there! 👋 How canHey there! 👋 How can I help you today?"
+  },
+  {
+    "timestamp": "2026-05-23T14:21:40.279Z",
+    "id": "msg_1779546100278_u",
+    "role": "user",
+    "content": "hi"
+  },
+  {
+    "timestamp": "2026-05-23T14:30:04.032Z",
+    "id": "msg_1779546604030_u",
+    "role": "user",
+    "content": "hi"
+  },
+  {
+    "timestamp": "2026-05-23T14:31:32.558Z",
+    "id": "msg_1779546692557_u",
+    "role": "user",
+    "content": "hi"
+  },
+  {
+    "timestamp": "2026-05-23T14:31:33.956Z",
+    "id": "msg_1779546693954_a",
+    "role": "assistant",
+    "content": "Hey! 👋What can I help you with today?"
   }
 ]

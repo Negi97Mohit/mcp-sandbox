@@ -4,7 +4,7 @@ export interface ElectronAPI {
     getAvailableModels: () => Promise<any>;
 
     getUsers: () => Promise<any>;
-    grantUser: (userId: string, role: string) => Promise<any>;
+    grantUser: (userId: string, role: string, workspaceId?: string, canManageTools?: boolean) => Promise<any>;
     revokeUser: (userId: string) => Promise<any>;
     createWorkspace: (userId: string) => Promise<any>;
     getUserHistory: (userId: string) => Promise<any>;

@@ -1,5 +1,5 @@
 import { CONFIG } from "../config/env.js";
-import { allTools } from "../tools/index.js";
+import { getAllTools } from "../tools/index.js";
 import { EmbedBuilder } from "discord.js";
 import * as os from "os";
 import * as fs from "fs/promises";
@@ -155,8 +155,9 @@ export async function checkModelConnectivity(): Promise<HealthCheckResult> {
  */
 export function checkToolsAvailability(): HealthCheckResult {
     try {
-        const toolCount = allTools.length;
-        const toolNames = allTools.map(t => t.function.name);
+        const tools = getAllTools();
+        const toolCount = tools.length;
+        const toolNames = tools.map(t => t.function.name);
 
         if (toolCount === 0) {
             return {

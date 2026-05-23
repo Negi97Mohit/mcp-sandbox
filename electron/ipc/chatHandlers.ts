@@ -5,6 +5,7 @@ import { chatStore } from "../../src/core/ChatStore.js";
 import { actionLogger } from "../../src/core/ActionLogger.js";
 import { recordMessage, recordToolCall, recordResponseTime, recordError } from "../../src/health/statsTracker.js";
 import { CONFIG } from "../../src/config/env.js";
+import { workspaceStore } from "../../src/core/WorkspaceStore.js";
 
 export function registerChatHandlers() {
     ipcMain.handle("chat:history", (_event, sessionId: string) => {
@@ -57,7 +58,7 @@ export function registerChatHandlers() {
                 const systemPrompt = `You are a DevOps Agent connected to the user's local machine.
 SYSTEM INFO:
 - OS: ${process.platform}
-- User Workspace: ${process.cwd()}
+- User Workspace: ${workspaceStore.getActivePath() || process.cwd()}
 - **ADMIN ACCESS**: You have full system access.
 
 CRITICAL INSTRUCTIONS:
@@ -160,7 +161,7 @@ CRITICAL INSTRUCTIONS:
                     const systemPrompt = `You are a DevOps Agent connected to the user's local machine.
 SYSTEM INFO:
 - OS: ${process.platform}
-- User Workspace: ${process.cwd()}
+- User Workspace: ${workspaceStore.getActivePath() || process.cwd()}
 - **ADMIN ACCESS**: You have full system access.
 `;
                     updatedHistory.unshift({ role: "system", content: systemPrompt, tool_calls: undefined, tool_call_id: undefined });

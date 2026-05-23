@@ -30,7 +30,7 @@ export async function executeToolCall(name: string, args: any, context?: ToolCon
         return handleFileTool(name, args, context);
     }
     if (searchTools.some((t) => t.function.name === name)) {
-        return handleSearchTool(name, args);
+        return handleSearchTool(name, args, context);
     }
     if (netlifyTools.some((t) => t.function.name === name)) {
         return handleNetlifyTool(name, args, context);

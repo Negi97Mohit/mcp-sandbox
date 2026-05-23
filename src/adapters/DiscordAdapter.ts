@@ -28,6 +28,11 @@ export class DiscordAdapter extends BaseAdapter {
             if (!CONFIG.DISCORD_TOKEN) {
                 throw new Error("Discord token is missing in .env");
             }
+            try {
+                await client.destroy();
+            } catch (destroyErr) {
+                console.warn("Failed to destroy existing Discord client before login:", destroyErr);
+            }
             await client.login(CONFIG.DISCORD_TOKEN);
             this.status = "running";
             this.error = undefined;

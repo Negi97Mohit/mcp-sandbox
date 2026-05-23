@@ -1,6 +1,21 @@
-=== DISCORD AGENT DEBUG SESSION STARTED 2026-05-23T13:02:40.548Z ===
-[2026-05-23T13:02:43.192Z] 🤖 Reasoning Bot Online: DevOps Agent#5650
-[2026-05-23T13:02:43.621Z] 📊 Generating startup health report...
-[2026-05-23T13:02:45.205Z] [messageCreate Event] Fired! Author: DevOps Agent#5650 (1464211455791468697), Bot: true
-[2026-05-23T13:02:45.208Z] [handleMessage] Ignored bot message from DevOps Agent#5650
-[2026-05-23T13:02:45.222Z] ✅ Health report sent to admin (Status: healthy)
+=== DISCORD AGENT DEBUG SESSION STARTED 2026-05-23T14:59:48.239Z ===
+[2026-05-23T14:59:50.698Z] 🤖 Reasoning Bot Online: DevOps Agent#5650
+[2026-05-23T14:59:51.973Z] 📊 Generating startup health report...
+[2026-05-23T14:59:53.235Z] [messageCreate Event] Fired! Author: DevOps Agent#5650 (1464211455791468697), Bot: true
+[2026-05-23T14:59:53.237Z] [handleMessage] Ignored bot message from DevOps Agent#5650
+[2026-05-23T14:59:53.244Z] ✅ Health report sent to admin (Status: healthy)
+[2026-05-23T15:02:57.610Z] [messageCreate Event] Fired! Author: lord_negi (1210691284323405856), Bot: false
+[2026-05-23T15:02:57.628Z] [handleMessage] Received message from lord_negi (1210691284323405856)
+[2026-05-23T15:02:57.629Z] [handleMessage] Raw Message Content: "oul u list the workspaes"
+[2026-05-23T15:02:57.631Z] [handleMessage] Guild: Direct Message (DM)
+[2026-05-23T15:02:57.633Z] [handleMessage] Channel Type: 1
+[2026-05-23T15:02:57.635Z] [handleMessage] Mentions: None
+[2026-05-23T15:02:57.638Z] [handleMessage] Bot User ID is: 1464211455791468697, Username: DevOps Agent#5650
+[2026-05-23T15:02:57.646Z] [handleMessage] isDM: true, isMentioned: false
+[2026-05-23T15:02:57.649Z] [handleMessage] userId: 1210691284323405856, canRead: true, role: admin
+[2026-05-23T15:02:57.652Z] [handleMessage] Triggering sendTyping...
+[2026-05-23T15:02:58.247Z] [handleMessage] Clean Content: "oul u list the workspaes"
+[2026-05-23T15:03:02.188Z] [messageCreate Event] Fired! Author: DevOps Agent#5650 (1464211455791468697), Bot: true
+[2026-05-23T15:03:02.190Z] [handleMessage] Ignored bot message from DevOps Agent#5650
+[2026-05-23T15:03:13.920Z] [messageCreate Event] Fired! Author: DevOps Agent#5650 (1464211455791468697), Bot: true
+[2026-05-23T15:03:13.923Z] [handleMessage] Ignored bot message from DevOps Agent#5650

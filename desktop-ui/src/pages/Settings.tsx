@@ -604,7 +604,7 @@ export const Settings: React.FC = () => {
             <Palette size={18} color="var(--primary)" /> Visual Styling & Themes
           </h2>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "12px" }}>
             {[
               { id: "glass", name: "Default Glass", desc: "Semi-transparent dark glassmorphism", icon: "✨" },
               { id: "brutalist", name: "Neo-Brutalist", desc: "High contrast yellow & solid outlines", icon: "🎨" },
@@ -612,6 +612,16 @@ export const Settings: React.FC = () => {
               { id: "chic", name: "Retro Chic", desc: "Warm vintage cream and sage tones", icon: "☕" },
               { id: "minimal", name: "Ultra-Minimal", desc: "Solid monochrome pure minimalism", icon: "🔳" },
               { id: "modern", name: "Futuristic Modern", desc: "Neon cyan/indigo cybernetic glow", icon: "🌌" },
+              { id: "dracula", name: "Dracula Gothic", desc: "Vibrant vampire purples and neon green", icon: "🧛" },
+              { id: "cyberpunk", name: "Cyberpunk Hacker", desc: "Saturated yellow, black and neon pink/cyan", icon: "⚡" },
+              { id: "nordic", name: "Nordic Frost", desc: "Cool polar slates and icy frost blue accents", icon: "❄️" },
+              { id: "brutalist-mono", name: "Stark Mono", desc: "Pure brutalist monochrome courier layout", icon: "📟" },
+              { id: "solarized-dark", name: "Solarized Dark", desc: "Retro amber and teal terminal console look", icon: "📟" },
+              { id: "glass-emerald", name: "Glass Emerald", desc: "Frosted dark-moss and luminous mint borders", icon: "🌿" },
+              { id: "synthwave", name: "Synthwave Retro", desc: "Vibrant 80s pink-purple sunset glow design", icon: "🎸" },
+              { id: "minimal-warm", name: "Minimal Warm", desc: "Cozy beige/linen texture and elegant serif text", icon: "🌾" },
+              { id: "vogue", name: "Vogue Editorial", desc: "High-contrast serif haute couture aesthetic", icon: "🖤" },
+              { id: "abyss", name: "Deep Abyss", desc: "Absolute black-ocean base and bio-cyan accents", icon: "🐙" },
             ].map(t => {
               const isSel = theme === t.id;
               return (

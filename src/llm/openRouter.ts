@@ -1,5 +1,5 @@
 import { CONFIG } from "../config/env.js";
-import { allTools } from "../tools/index.js";
+import { getAllTools } from "../tools/index.js";
 
 // ─── Free-model fallback chain ───────────────────────────────────────────────
 // When the primary model hits its daily limit we automatically retry with the
@@ -237,7 +237,7 @@ async function callOpenRouterWithModel(messages: any[], model: string): Promise<
             body: JSON.stringify({
                 model,
                 messages: messages,
-                tools: allTools,
+                tools: getAllTools(),
                 tool_choice: "auto",
             }),
         },

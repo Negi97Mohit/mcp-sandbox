@@ -8,7 +8,7 @@ contextBridge.exposeInMainWorld("api", {
 
     // Users & Permissions
     getUsers: () => ipcRenderer.invoke("users:list"),
-    grantUser: (userId: string, role: string) => ipcRenderer.invoke("users:grant", userId, role),
+    grantUser: (userId: string, role: string, workspaceId?: string, canManageTools?: boolean) => ipcRenderer.invoke("users:grant", userId, role, workspaceId, canManageTools),
     revokeUser: (userId: string) => ipcRenderer.invoke("users:revoke", userId),
     createWorkspace: (userId: string) => ipcRenderer.invoke("users:workspace", userId),
     getUserHistory: (userId: string) => ipcRenderer.invoke("users:history", userId),

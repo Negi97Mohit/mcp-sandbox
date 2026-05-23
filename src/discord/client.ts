@@ -5,6 +5,7 @@ import { executeToolCall } from "../tools/index.js";
 import { smartSplitMessage } from "./utils.js";
 import { permissionManager } from "../core/PermissionManager.js";
 import { workspaceManager } from "../core/WorkspaceManager.js";
+import { workspaceStore } from "../core/WorkspaceStore.js";
 import type { ToolContext } from "../types/toolContext.js";
 import { generateHealthReport, generateHistoryEmbed } from "../health/healthCheck.js";
 import { recordMessage, recordToolCall, recordError, recordResponseTime } from "../health/statsTracker.js";
@@ -297,7 +298,20 @@ async function handleMessage(message: Message) {
 
         // Determine prompt based on User Role
         const isAdmin = permissionManager.isAdmin(userId);
-        const workspacePath = isAdmin ? cwd : workspaceManager.ensureWorkspace(userId);
+        let workspacePath = cwd;
+        if (isAdmin) {
+            workspacePath = workspaceStore.getActivePath() || cwd;
+        } else {
+            const wsId = permissionManager.getWorkspaceId(userId);
+            let userWsPath = "";
+            if (wsId) {
+                const ws = workspaceStore.list().find(w => w.id === wsId);
+                if (ws) {
+                    userWsPath = ws.path;
+                }
+            }
+            workspacePath = userWsPath || workspaceManager.ensureWorkspace(userId);
+        }
 
         const systemPrompt = `You are a DevOps Agent connected to the user's local machine.
 SYSTEM INFO:
@@ -368,11 +382,24 @@ CRITICAL INSTRUCTIONS:
 
                 // PREPARE CONTEXT WITH PERMISSIONS
                 const isAdmin = permissionManager.isAdmin(userId);
+                let workspaceRoot = "";
+                if (!isAdmin) {
+                    const wsId = permissionManager.getWorkspaceId(userId);
+                    let userWsPath = "";
+                    if (wsId) {
+                        const ws = workspaceStore.list().find(w => w.id === wsId);
+                        if (ws) {
+                            userWsPath = ws.path;
+                        }
+                    }
+                    workspaceRoot = userWsPath || workspaceManager.ensureWorkspace(userId);
+                }
+
                 const context: ToolContext = {
                     channelId: message.channel.id,
                     sendLog,
                     userId,
-                    ...(isAdmin ? {} : { workspaceRoot: workspaceManager.ensureWorkspace(userId) })
+                    ...(isAdmin ? {} : { workspaceRoot })
                 };
 
                 const toolResult = await executeToolCall(toolCall.function.name, args, context);

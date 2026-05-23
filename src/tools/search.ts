@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { workspaceStore } from "../core/WorkspaceStore.js";
+import type { ToolContext } from "../types/toolContext.js";
 
 export const searchTools = [
     {
@@ -25,9 +26,27 @@ export const searchTools = [
     },
 ];
 
-export async function handleSearchTool(name: string, args: any) {
+export async function handleSearchTool(name: string, args: any, context?: ToolContext) {
     if (name === "find_git_repos") {
-        const startPath = args.start_path || workspaceStore.getActivePath() || process.env.USERPROFILE || process.env.HOME || ".";
+        const baseDir = context?.workspaceRoot || workspaceStore.getActivePath() || process.cwd();
+        let startPath = args.start_path;
+        if (startPath) {
+            if (path.isAbsolute(startPath)) {
+                if (context?.workspaceRoot && !startPath.startsWith(context.workspaceRoot)) {
+                    return { error: `Access Denied: You cannot search outside your workspace.` };
+                }
+            } else {
+                startPath = path.resolve(baseDir, startPath);
+            }
+        } else {
+            startPath = baseDir;
+        }
+
+        // Verify startPath starts with workspaceRoot if sandboxed
+        if (context?.workspaceRoot && !startPath.startsWith(context.workspaceRoot)) {
+            return { error: `Access Denied: You cannot search outside your workspace.` };
+        }
+
         const maxDepth = args.max_depth || 5;
         console.log(`🔎 Searching for Git repos starting at: ${startPath}`);
 

@@ -10,6 +10,8 @@ interface PermissionData {
             role: PermissionLevel;
             grantedAt: string;
             grantedBy?: string;
+            workspaceId?: string;
+            canManageTools?: boolean;
         };
     };
 }
@@ -39,13 +41,17 @@ export class PermissionManager {
         fs.writeFileSync(this.dbPath, JSON.stringify(this.data, null, 2));
     }
 
-    public grant(adminUserId: string, targetUserId: string, role: PermissionLevel) {
+    public grant(adminUserId: string, targetUserId: string, role: PermissionLevel, workspaceId?: string, canManageTools?: boolean) {
         if (!this.isAdmin(adminUserId)) {
             throw new Error('Only admins can grant permissions');
         }
 
+        const existing = this.data.users[targetUserId] || {};
+
         this.data.users[targetUserId] = {
             role,
+            workspaceId: workspaceId !== undefined ? workspaceId : existing.workspaceId,
+            canManageTools: canManageTools !== undefined ? canManageTools : existing.canManageTools,
             grantedAt: new Date().toISOString(),
             grantedBy: adminUserId
         };
@@ -71,6 +77,15 @@ export class PermissionManager {
         return this.data.users[userId]?.role || 'none';
     }
 
+    public getWorkspaceId(userId: string): string | undefined {
+        return this.data.users[userId]?.workspaceId;
+    }
+
+    public canManageTools(userId: string): boolean {
+        if (this.isAdmin(userId)) return true;
+        return !!this.data.users[userId]?.canManageTools;
+    }
+
     public isAdmin(userId: string): boolean {
         return this.getRole(userId) === 'admin';
     }
@@ -85,10 +100,12 @@ export class PermissionManager {
         return role !== 'none';
     }
 
-    public listAll(): { userId: string; role: PermissionLevel }[] {
+    public listAll(): { userId: string; role: PermissionLevel; workspaceId?: string; canManageTools?: boolean }[] {
         return Object.entries(this.data.users).map(([userId, data]) => ({
             userId,
-            role: data.role
+            role: data.role,
+            workspaceId: data.workspaceId,
+            canManageTools: !!data.canManageTools
         }));
     }
 }

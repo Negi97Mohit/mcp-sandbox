@@ -199,12 +199,22 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                             fontFamily: "var(--font-sans)",
                         }}
                     >
-                        <option value="glass" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>✨ Glass</option>
-                        <option value="brutalist" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🎨 Brutalist</option>
-                        <option value="light" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>☀️ Light</option>
+                        <option value="glass" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>✨ Glass (Default)</option>
+                        <option value="brutalist" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🎨 Neo-Brutalist</option>
+                        <option value="light" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>☀️ Chic Light</option>
                         <option value="chic" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>☕ Retro Chic</option>
-                        <option value="minimal" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🔳 Minimal</option>
-                        <option value="modern" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🌌 Modern</option>
+                        <option value="minimal" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🔳 Ultra-Minimal</option>
+                        <option value="modern" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🌌 Futuristic Modern</option>
+                        <option value="dracula" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🧛 Dracula Gothic</option>
+                        <option value="cyberpunk" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>⚡ Cyberpunk Hacker</option>
+                        <option value="nordic" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>❄️ Nordic Frost</option>
+                        <option value="brutalist-mono" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>📟 Stark Mono</option>
+                        <option value="solarized-dark" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>📟 Solarized Dark</option>
+                        <option value="glass-emerald" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🌿 Glass Emerald</option>
+                        <option value="synthwave" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🎸 Synthwave Retro</option>
+                        <option value="minimal-warm" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🌾 Minimal Warm</option>
+                        <option value="vogue" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🖤 Vogue Editorial</option>
+                        <option value="abyss" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🐙 Deep Abyss</option>
                     </select>
                 </div>
             </div>
