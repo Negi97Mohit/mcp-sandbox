@@ -199,22 +199,31 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                             fontFamily: "var(--font-sans)",
                         }}
                     >
-                        <option value="glass" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>✨ Glass (Default)</option>
-                        <option value="brutalist" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🎨 Neo-Brutalist</option>
-                        <option value="light" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>☀️ Chic Light</option>
-                        <option value="chic" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>☕ Retro Chic</option>
-                        <option value="minimal" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🔳 Ultra-Minimal</option>
-                        <option value="modern" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🌌 Futuristic Modern</option>
-                        <option value="dracula" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🧛 Dracula Gothic</option>
-                        <option value="cyberpunk" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>⚡ Cyberpunk Hacker</option>
-                        <option value="nordic" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>❄️ Nordic Frost</option>
-                        <option value="brutalist-mono" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>📟 Stark Mono</option>
-                        <option value="solarized-dark" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>📟 Solarized Dark</option>
-                        <option value="glass-emerald" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🌿 Glass Emerald</option>
-                        <option value="synthwave" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🎸 Synthwave Retro</option>
-                        <option value="minimal-warm" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🌾 Minimal Warm</option>
-                        <option value="vogue" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🖤 Vogue Editorial</option>
-                        <option value="abyss" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🐙 Deep Abyss</option>
+                        <optgroup label="Core Themes" style={{ background: "var(--bg-deep)" }}>
+                            <option value="glass" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>✨ Glass (Default)</option>
+                            <option value="brutalist" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🎨 Neo-Brutalist</option>
+                            <option value="light" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>☀️ Chic Light</option>
+                            <option value="chic" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>☕ Retro Chic</option>
+                            <option value="minimal" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🔳 Ultra-Minimal</option>
+                            <option value="modern" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🌌 Futuristic Modern</option>
+                            <option value="dracula" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🧛 Dracula Gothic</option>
+                            <option value="cyberpunk" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>⚡ Cyberpunk Hacker</option>
+                            <option value="nordic" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>❄️ Nordic Frost</option>
+                            <option value="brutalist-mono" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>📟 Stark Mono</option>
+                            <option value="solarized-dark" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>📟 Solarized Dark</option>
+                            <option value="glass-emerald" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🌿 Glass Emerald</option>
+                            <option value="synthwave" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🎸 Synthwave Retro</option>
+                            <option value="minimal-warm" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🌾 Minimal Warm</option>
+                            <option value="vogue" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🖤 Vogue Editorial</option>
+                            <option value="abyss" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🐙 Deep Abyss</option>
+                        </optgroup>
+                        <optgroup label="AI Agent Themes" style={{ background: "var(--bg-deep)" }}>
+                            <option value="google-ai" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🔵 Google AI Studio (Snappy)</option>
+                            <option value="claude" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>📙 Claude (Thocky)</option>
+                            <option value="openai" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🟢 OpenAI (Bubblegummy)</option>
+                            <option value="codex" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>⬛ Codex (Rigid Terminal)</option>
+                            <option value="deepseek" style={{ background: "var(--bg-surface)", color: "var(--text-primary)" }}>🐋 DeepSeek (Fluid Ocean)</option>
+                        </optgroup>
                     </select>
                 </div>
             </div>
@@ -428,7 +437,7 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({ to, icon, label, end }) => {
                     ? "var(--sidebar-active-bg, linear-gradient(135deg, rgba(99,102,241,0.18), rgba(168,85,247,0.07)))"
                     : "transparent",
                 borderLeft: isActive ? "2px solid var(--primary)" : "2px solid transparent",
-                transition: "all 0.15s ease",
+                transition: "all var(--transition-speed) var(--transition-curve)",
                 marginBottom: "1px",
                 opacity: isActive ? 1 : 0.75,
             })}
