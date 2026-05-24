@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld("api", {
     getHealthHistory: (days: number) => ipcRenderer.invoke("health:history", days),
     getStats: (days: number) => ipcRenderer.invoke("stats:get", days),
     getStatsChartData: (days: number) => ipcRenderer.invoke("stats:charts", days),
+    getSystemStats: () => ipcRenderer.invoke("health:system-stats"),
 
     // Platform Adapters
     getPlatforms: () => ipcRenderer.invoke("platforms:list"),

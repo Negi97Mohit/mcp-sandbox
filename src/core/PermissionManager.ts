@@ -1,6 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { CONFIG } from '../config/env.js';
+import { workspaceStore } from './WorkspaceStore.js';
+import { notifyAdmin } from './NotificationManager.js';
+import { simpleGit } from 'simple-git';
 
 export type PermissionLevel = 'read' | 'write' | 'admin' | 'none';
 
@@ -9,9 +12,9 @@ interface PermissionData {
         [userId: string]: {
             role: PermissionLevel;
             grantedAt: string;
-            grantedBy?: string;
-            workspaceId?: string;
-            canManageTools?: boolean;
+            grantedBy?: string | undefined;
+            workspaceId?: string | undefined;
+            canManageTools?: boolean | undefined;
         };
     };
 }
@@ -46,16 +49,70 @@ export class PermissionManager {
             throw new Error('Only admins can grant permissions');
         }
 
-        const existing = this.data.users[targetUserId] || {};
+        const existing = this.data.users[targetUserId];
+        const resolvedWorkspaceId = workspaceId !== undefined ? workspaceId : existing?.workspaceId;
 
         this.data.users[targetUserId] = {
             role,
-            workspaceId: workspaceId !== undefined ? workspaceId : existing.workspaceId,
-            canManageTools: canManageTools !== undefined ? canManageTools : existing.canManageTools,
+            workspaceId: resolvedWorkspaceId,
+            canManageTools: canManageTools !== undefined ? canManageTools : existing?.canManageTools,
             grantedAt: new Date().toISOString(),
             grantedBy: adminUserId
         };
         this.saveData();
+
+        // If assigned a workspace and role is active, trigger automated onboarding branch & notification setup
+        if (resolvedWorkspaceId && role !== 'none') {
+            this.setupUserBranchAndNotify(targetUserId, role, resolvedWorkspaceId).catch(err => {
+                console.error("Failed in setupUserBranchAndNotify:", err);
+            });
+        }
+    }
+
+    private async setupUserBranchAndNotify(targetUserId: string, role: PermissionLevel, workspaceId: string) {
+        try {
+            const workspace = workspaceStore.list().find(w => w.id === workspaceId);
+            if (!workspace) {
+                await notifyAdmin(`⚠️ Permissions updated for user \`${targetUserId}\`, but the assigned workspace \`${workspaceId}\` could not be found.`);
+                return;
+            }
+
+            const git = simpleGit(workspace.path);
+            const isRepo = await git.checkIsRepo();
+            if (!isRepo) {
+                await notifyAdmin(`⚠️ Permissions updated for user \`${targetUserId}\` in workspace **${workspace.name}**, but the directory is not a Git repository.`);
+                return;
+            }
+
+            const branchName = `user-${targetUserId}`;
+            const localBranches = await git.branchLocal();
+            
+            if (localBranches.all.includes(branchName)) {
+                await notifyAdmin(`👥 Permissions updated for user \`${targetUserId}\` in workspace **${workspace.name}**.\n🌿 Git branch \`${branchName}\` already exists locally.`);
+                return;
+            }
+
+            // Create and checkout branch
+            await git.checkoutLocalBranch(branchName);
+            
+            let pushedMsg = "";
+            try {
+                const remotes = await git.getRemotes();
+                if (remotes.some(r => r.name === 'origin')) {
+                    await git.push('origin', branchName, { '--set-upstream': null });
+                    pushedMsg = " and pushed to remote origin";
+                } else {
+                    pushedMsg = " (no remote origin configured)";
+                }
+            } catch (pushErr: any) {
+                pushedMsg = ` (failed to push to origin: ${pushErr.message || String(pushErr)})`;
+            }
+
+            await notifyAdmin(`✅ **New User Onboarded!**\n👤 User ID: \`${targetUserId}\`\n💼 Role: \`${role}\`\n📂 Workspace: **${workspace.name}** (${workspace.path})\n🌿 Automatically created Git branch \`${branchName}\`${pushedMsg}.`);
+        } catch (err: any) {
+            console.error("Failed in setupUserBranchAndNotify:", err);
+            await notifyAdmin(`❌ **Onboarding Error**\nFailed to setup Git branch for user \`${targetUserId}\`:\n\`\`\`text\n${err.message || String(err)}\n\`\`\``);
+        }
     }
 
     public revoke(adminUserId: string, targetUserId: string) {
@@ -101,12 +158,17 @@ export class PermissionManager {
     }
 
     public listAll(): { userId: string; role: PermissionLevel; workspaceId?: string; canManageTools?: boolean }[] {
-        return Object.entries(this.data.users).map(([userId, data]) => ({
-            userId,
-            role: data.role,
-            workspaceId: data.workspaceId,
-            canManageTools: !!data.canManageTools
-        }));
+        return Object.entries(this.data.users).map(([userId, data]) => {
+            const item: { userId: string; role: PermissionLevel; workspaceId?: string; canManageTools?: boolean } = {
+                userId,
+                role: data.role,
+                canManageTools: !!data.canManageTools
+            };
+            if (data.workspaceId !== undefined) {
+                item.workspaceId = data.workspaceId;
+            }
+            return item;
+        });
     }
 }
 

@@ -13,6 +13,7 @@ export interface ElectronAPI {
     getHealthHistory: (days: number) => Promise<any>;
     getStats: (days: number) => Promise<any>;
     getStatsChartData: (days: number) => Promise<any>;
+    getSystemStats: () => Promise<any>;
 
     getPlatforms: () => Promise<any>;
     startPlatform: (id: string) => Promise<any>;

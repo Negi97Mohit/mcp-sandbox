@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as vm from "vm";
-import { app } from "electron";
+import * as os from "os";
 
 export interface CustomToolParameter {
     name: string;
@@ -24,7 +24,14 @@ class CustomToolsEngine {
     private tools: CustomTool[];
 
     constructor() {
-        const userDataPath = app.getPath("userData");
+        const appName = "mcp-sandbox";
+        const home = os.homedir();
+        const userDataPath = process.platform === "win32"
+            ? path.join(process.env.APPDATA || path.join(home, "AppData", "Roaming"), appName)
+            : process.platform === "darwin"
+                ? path.join(home, "Library", "Application Support", appName)
+                : path.join(home, ".config", appName);
+
         this.dataPath = path.join(userDataPath, "custom_tools.json");
         this.tools = this.load();
     }
@@ -82,6 +89,25 @@ class CustomToolsEngine {
     delete(id: string): void {
         const idx = this.tools.findIndex((t) => t.id === id);
         if (idx === -1) throw new Error(`Tool not found: ${id}`);
+        this.tools.splice(idx, 1);
+        this.save();
+    }
+
+    getByName(name: string): CustomTool | undefined {
+        return this.tools.find((t) => t.name === name);
+    }
+
+    updateByName(name: string, updates: Partial<Omit<CustomTool, "id" | "createdAt" | "name">>): CustomTool {
+        const idx = this.tools.findIndex((t) => t.name === name);
+        if (idx === -1) throw new Error(`Tool not found: ${name}`);
+        this.tools[idx] = { ...this.tools[idx]!, ...updates };
+        this.save();
+        return this.tools[idx]!;
+    }
+
+    deleteByName(name: string): void {
+        const idx = this.tools.findIndex((t) => t.name === name);
+        if (idx === -1) throw new Error(`Tool not found: ${name}`);
         this.tools.splice(idx, 1);
         this.save();
     }

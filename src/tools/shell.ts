@@ -53,9 +53,16 @@ export async function handleShellCommand(args: { command: string }, context?: To
         setSessionCwd(channelId, currentDir);
     }
 
+    const trimmedCmd = command.trim();
+    const isPureCd = (trimmedCmd === "cd" || trimmedCmd.startsWith("cd ")) &&
+                     !trimmedCmd.includes("&&") &&
+                     !trimmedCmd.includes(";") &&
+                     !trimmedCmd.includes("|") &&
+                     !trimmedCmd.includes("\n");
+
     // 1. Handle 'cd' manually
-    if (command.trim().startsWith("cd ")) {
-        const rawPath = command.trim().slice(3).trim();
+    if (isPureCd) {
+        const rawPath = trimmedCmd.slice(2).trim();
         try {
             const target = path.resolve(currentDir, rawPath);
 
@@ -89,6 +96,7 @@ export async function handleShellCommand(args: { command: string }, context?: To
             cwd: currentDir,
             env: process.env,
             stdio: ["ignore", "pipe", "pipe"], // ignore stdin for now
+            windowsVerbatimArguments: process.platform === "win32"
         });
 
         let outputBuffer = "";

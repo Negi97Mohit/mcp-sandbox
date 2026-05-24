@@ -165,8 +165,8 @@ export const CustomTools: React.FC = () => {
                     </p>
                 </div>
                 <div style={{ display: "flex", gap: "10px", flexShrink: 0 }}>
-                    <button onClick={loadTools} style={iconBtnStyle}><RefreshCw size={15} /></button>
-                    <button onClick={() => { resetForm(); setEditingId(null); setShowCreate(!showCreate); setError(""); }} style={primaryBtnStyle}>
+                    <button onClick={loadTools} style={iconBtnStyle} title="Refresh tools list"><RefreshCw size={15} /></button>
+                    <button onClick={() => { resetForm(); setEditingId(null); setShowCreate(!showCreate); setError(""); }} className="glow-btn" style={primaryBtnStyle} title="Create a new custom tool">
                         <Plus size={15} /> New Tool
                     </button>
                 </div>
@@ -198,7 +198,7 @@ export const CustomTools: React.FC = () => {
                     <div style={{ marginBottom: "16px" }}>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
                             <label style={{ ...labelStyle, marginBottom: 0 }}>Parameters</label>
-                            <button onClick={addParam} style={{ ...iconBtnStyle, fontSize: "12px", padding: "4px 10px", display: "flex", alignItems: "center", gap: "4px" }}>
+                            <button onClick={addParam} style={{ ...iconBtnStyle, fontSize: "12px", padding: "4px 10px", display: "flex", alignItems: "center", gap: "4px" }} title="Add a new parameter to this tool">
                                 <Plus size={12} /> Add Param
                             </button>
                         </div>
@@ -214,11 +214,11 @@ export const CustomTools: React.FC = () => {
                                     <option value="boolean">boolean</option>
                                 </select>
                                 <input value={p.description} onChange={(e) => updateParam(idx, { description: e.target.value })} placeholder="Description" style={{ ...inputStyle, fontSize: "12px", padding: "7px 10px" }} />
-                                <label style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "11px", color: "var(--text-muted)", cursor: "pointer", whiteSpace: "nowrap" }}>
+                                <label style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "11px", color: "var(--text-muted)", cursor: "pointer", whiteSpace: "nowrap" }} title="Is this parameter required?">
                                     <input type="checkbox" checked={p.required} onChange={(e) => updateParam(idx, { required: e.target.checked })} style={{ accentColor: "var(--primary)" }} />
                                     Req
                                 </label>
-                                <button onClick={() => removeParam(idx)} style={{ ...iconBtnStyle, color: "var(--error)", padding: "7px" }}><X size={13} /></button>
+                                <button onClick={() => removeParam(idx)} style={{ ...iconBtnStyle, color: "var(--error)", padding: "7px" }} title="Remove parameter"><X size={13} /></button>
                             </div>
                         ))}
                     </div>
@@ -231,7 +231,7 @@ export const CustomTools: React.FC = () => {
                             </label>
                             <div style={{ display: "flex", gap: "6px" }}>
                                 {TEMPLATES.map((t) => (
-                                    <button key={t.label} onClick={() => setForm((f) => ({ ...f, code: t.code }))} style={{ ...iconBtnStyle, fontSize: "11px", padding: "3px 8px" }}>
+                                    <button key={t.label} onClick={() => setForm((f) => ({ ...f, code: t.code }))} style={{ ...iconBtnStyle, fontSize: "11px", padding: "3px 8px" }} title={`Load ${t.label} template`}>
                                         {t.label}
                                     </button>
                                 ))}
@@ -248,7 +248,7 @@ export const CustomTools: React.FC = () => {
 
                     <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
                         <button onClick={() => { setShowCreate(false); setEditingId(null); resetForm(); }} style={secondaryBtnStyle}>Cancel</button>
-                        <button onClick={handleSave} style={primaryBtnStyle}><Save size={14} /> {editingId ? "Save Changes" : "Create Tool"}</button>
+                        <button onClick={handleSave} className="glow-btn" style={primaryBtnStyle}><Save size={14} /> {editingId ? "Save Changes" : "Create Tool"}</button>
                     </div>
                 </div>
             )}
@@ -285,11 +285,11 @@ export const CustomTools: React.FC = () => {
                                     </div>
                                 </div>
                                 <div style={{ display: "flex", gap: "6px", flexShrink: 0, marginLeft: "12px" }}>
-                                    <button onClick={() => setExpandedId(expandedId === tool.id ? null : tool.id)} style={iconBtnStyle}>
+                                    <button onClick={() => setExpandedId(expandedId === tool.id ? null : tool.id)} style={iconBtnStyle} title={expandedId === tool.id ? "Collapse runner" : "Expand runner"}>
                                         {expandedId === tool.id ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
                                     </button>
-                                    <button onClick={() => handleEdit(tool)} style={iconBtnStyle}><Pencil size={15} /></button>
-                                    <button onClick={() => handleDelete(tool.id)} style={{ ...iconBtnStyle, color: "var(--error)" }}><Trash2 size={15} /></button>
+                                    <button onClick={() => handleEdit(tool)} style={iconBtnStyle} title="Edit tool"><Pencil size={15} /></button>
+                                    <button onClick={() => handleDelete(tool.id)} style={{ ...iconBtnStyle, color: "var(--error)" }} title="Delete tool"><Trash2 size={15} /></button>
                                 </div>
                             </div>
 
@@ -311,7 +311,7 @@ export const CustomTools: React.FC = () => {
                                             ))}
                                         </div>
                                     )}
-                                    <button onClick={() => handleRun(tool)} disabled={runningId === tool.id} style={primaryBtnStyle}>
+                                    <button onClick={() => handleRun(tool)} disabled={runningId === tool.id} className="glow-btn" style={primaryBtnStyle}>
                                         <Play size={13} /> {runningId === tool.id ? "Running..." : "Run Tool"}
                                     </button>
 
@@ -352,9 +352,9 @@ export const CustomTools: React.FC = () => {
     );
 };
 
-const cardStyle: React.CSSProperties = { background: "rgba(15,15,35,0.6)", border: "1px solid rgba(99,102,241,0.12)", borderRadius: "12px", padding: "20px", backdropFilter: "blur(10px)" };
-const primaryBtnStyle: React.CSSProperties = { display: "flex", alignItems: "center", gap: "6px", background: "linear-gradient(135deg, var(--primary), var(--secondary))", color: "#fff", border: "none", borderRadius: "8px", padding: "8px 16px", fontSize: "13px", fontWeight: 600, cursor: "pointer" };
-const secondaryBtnStyle: React.CSSProperties = { background: "rgba(30,30,60,0.5)", color: "var(--text-secondary)", border: "1px solid rgba(99,102,241,0.15)", borderRadius: "8px", padding: "8px 16px", fontSize: "13px", cursor: "pointer" };
-const iconBtnStyle: React.CSSProperties = { background: "rgba(30,30,60,0.5)", color: "var(--text-secondary)", border: "1px solid rgba(99,102,241,0.15)", borderRadius: "8px", padding: "8px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" };
+const cardStyle: React.CSSProperties = { background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", padding: "20px", backdropFilter: "blur(10px)" };
+const primaryBtnStyle: React.CSSProperties = { display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px", fontSize: "13px", fontWeight: 600, cursor: "pointer" };
+const secondaryBtnStyle: React.CSSProperties = { background: "var(--bg-card)", color: "var(--text-secondary)", border: "1px solid var(--border)", borderRadius: "8px", padding: "8px 16px", fontSize: "13px", cursor: "pointer" };
+const iconBtnStyle: React.CSSProperties = { background: "var(--bg-card)", color: "var(--text-secondary)", border: "1px solid var(--border)", borderRadius: "8px", padding: "8px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" };
 const labelStyle: React.CSSProperties = { display: "block", marginBottom: "6px", fontSize: "12px", color: "var(--text-muted)", fontWeight: 500 };
-const inputStyle: React.CSSProperties = { width: "100%", boxSizing: "border-box", background: "rgba(10,10,30,0.6)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: "8px", padding: "9px 12px", color: "var(--text-primary)", fontSize: "13px", outline: "none", fontFamily: "inherit" };
+const inputStyle: React.CSSProperties = { width: "100%", boxSizing: "border-box", background: "var(--bg-deep)", border: "1px solid var(--border)", borderRadius: "8px", padding: "9px 12px", color: "var(--text-primary)", fontSize: "13px", outline: "none", fontFamily: "inherit" };

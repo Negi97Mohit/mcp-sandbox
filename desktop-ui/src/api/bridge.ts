@@ -144,4 +144,12 @@ export const api: ElectronAPI = isElectron
           runCustomTool: async () => ({ success: true, output: "mock result", logs: [] }),
           onBotStatusChange: () => {},
           onServiceLog: () => {},
+          getSystemStats: async () => ({
+              cpuLoad: 12,
+              memory: { totalGB: "16.0", usedGB: "8.4", percent: 52 },
+              nodeMemoryMB: "48.2",
+              uptimeSeconds: 3600,
+              platform: "win32",
+              arch: "x64"
+          }),
       };

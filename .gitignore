@@ -1,3 +1,6 @@
 .env
 node_modules/
 health_reports/
+release/
+dist/
+adapter_configs.json

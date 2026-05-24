@@ -5,8 +5,16 @@ import * as os from "os";
 import * as fs from "fs/promises";
 import * as path from "path";
 
-// Health reports storage directory
-const REPORTS_DIR = path.join(process.cwd(), "health_reports");
+// Health reports storage directory inside AppData
+const appName = "Gaki - Development Kit";
+const home = os.homedir();
+const userDataPath = process.platform === "win32"
+    ? path.join(process.env.APPDATA || path.join(home, "AppData", "Roaming"), appName)
+    : process.platform === "darwin"
+        ? path.join(home, "Library", "Application Support", appName)
+        : path.join(home, ".config", appName);
+
+const REPORTS_DIR = path.join(userDataPath, "health_reports");
 
 export interface HealthCheckResult {
     name: string;

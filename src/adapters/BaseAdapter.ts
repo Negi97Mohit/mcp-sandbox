@@ -16,7 +16,7 @@ export abstract class BaseAdapter {
     abstract icon: string;          // emoji or icon name
     abstract description: string;
     status: 'running' | 'stopped' | 'error' | 'starting' = 'stopped';
-    error?: string;
+    error?: string | undefined;
 
     abstract start(): Promise<void>;
     abstract stop(): Promise<void>;

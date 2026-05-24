@@ -1,6 +1,6 @@
 {
   "discord": {
-    "discord_token": "YOUR_DISCORD_TOKEN",
+    "discord_token": "${DISCORD_TOKEN}",
     "alloweduserid": "1210691284323405856",
     "model_name": "nvidia/nemotron-3-nano-30b-a3b:free"
   },

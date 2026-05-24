@@ -8,7 +8,6 @@ import {
     History,
     Activity,
     Settings as SettingsIcon,
-    Bot,
     FolderOpen,
     Wrench,
     AlertTriangle,
@@ -16,6 +15,7 @@ import {
     ChevronRight,
 } from "lucide-react";
 import { api } from "../api/bridge.js";
+import AppLogo from "./AppLogo.js";
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -160,12 +160,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     position: "absolute", left: "50%", transform: "translateX(-50%)",
                     pointerEvents: "none",
                 }}>
-                    <Bot size={15} color="var(--primary)" />
+                    <AppLogo size={16} color="var(--primary)" strokeWidth={5} />
                     <span style={{
                         fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "12px",
                         letterSpacing: "2.5px", color: "var(--text-titlebar)", textTransform: "uppercase",
                     }}>
-                        MCP Sandbox
+                        Gaki - Development Kit
                     </span>
                     <span style={{
                         fontSize: "9px", padding: "1px 6px",

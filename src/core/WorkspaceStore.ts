@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
-import { app } from "electron";
+import * as os from "os";
+import { simpleGit } from "simple-git";
 
 export interface Workspace {
     id: string;
@@ -20,7 +21,14 @@ class WorkspaceStore {
     private data: WorkspaceStoreData;
 
     constructor() {
-        const userDataPath = app.getPath("userData");
+        const appName = "mcp-sandbox";
+        const home = os.homedir();
+        const userDataPath = process.platform === "win32"
+            ? path.join(process.env.APPDATA || path.join(home, "AppData", "Roaming"), appName)
+            : process.platform === "darwin"
+                ? path.join(home, "Library", "Application Support", appName)
+                : path.join(home, ".config", appName);
+
         this.dataPath = path.join(userDataPath, "workspaces.json");
         this.data = this.load();
     }
@@ -53,13 +61,24 @@ class WorkspaceStore {
         }));
     }
 
-    create(name: string, dirPath: string): Workspace {
+    async create(name: string, dirPath: string): Promise<Workspace> {
         if (!fs.existsSync(dirPath)) {
             throw new Error(`Path does not exist: ${dirPath}`);
         }
         const stat = fs.statSync(dirPath);
         if (!stat.isDirectory()) {
             throw new Error(`Path is not a directory: ${dirPath}`);
+        }
+
+        // Validate that directory is a Git repository
+        const git = simpleGit(dirPath);
+        try {
+            const isRepo = await git.checkIsRepo();
+            if (!isRepo) {
+                throw new Error(`The directory "${dirPath}" is not a Git repository. Admins can only register workspaces that are connected to Git.`);
+            }
+        } catch (err: any) {
+            throw new Error(`Git validation failed: ${err.message || String(err)}`);
         }
 
         const existing = this.data.workspaces.find((w) => w.path === path.resolve(dirPath));

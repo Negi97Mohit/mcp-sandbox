@@ -151,8 +151,12 @@ export const Actions: React.FC = () => {
             Loading historical logs...
           </div>
         ) : actions.length === 0 ? (
-          <div className="glass" style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>
-            No matching action logs found.
+          <div className="glass" style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
+            <Clock size={32} color="rgba(99,102,241,0.3)" />
+            <div>
+                <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>No action logs found.</div>
+                <div style={{ fontSize: "12px", marginTop: "4px" }}>Only tool executions (e.g. running shell commands, writing files) initiated by the AI will appear here. Normal chat messages are not logged as actions.</div>
+            </div>
           </div>
         ) : (
           actions.map(a => {
@@ -210,10 +214,12 @@ export const Actions: React.FC = () => {
                     }}>
                       {a.platform.toUpperCase()}
                     </span>
-                    <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                    <span style={{ fontSize: "11px", color: "var(--text-muted)" }} title="Time executed">
                       {new Date(a.timestamp).toLocaleTimeString()}
                     </span>
-                    {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    <div title={isExpanded ? "Collapse details" : "Expand details"} style={{ display: "flex" }}>
+                        {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    </div>
                   </div>
                 </div>
  

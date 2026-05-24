@@ -71,6 +71,11 @@ export const Chat: React.FC = () => {
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [toolCallsRun, setToolCallsRun] = useState<any[]>([]);
   const [activeToolLog, setActiveToolLog] = useState<string>("");
+  
+  // Inline session creation state
+  const [isCreatingSession, setIsCreatingSession] = useState(false);
+  const [newSessionName, setNewSessionName] = useState("");
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const loadSessions = async (currentActive = activeSession) => {
@@ -233,11 +238,18 @@ export const Chat: React.FC = () => {
     }
   };
 
-  const handleNewSession = () => {
-    const name = prompt("Enter a unique name for this chat session:");
-    if (!name || !name.trim()) return;
-    const cleanName = name.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "_");
+  const handleConfirmNewSession = () => {
+    const name = newSessionName.trim();
+    if (!name) return;
+    const cleanName = name.toLowerCase().replace(/[^a-z0-9_-]/g, "_");
     setActiveSession(cleanName);
+    setNewSessionName("");
+    setIsCreatingSession(false);
+  };
+
+  const handleCancelNewSession = () => {
+    setNewSessionName("");
+    setIsCreatingSession(false);
   };
 
   return (
@@ -247,25 +259,99 @@ export const Chat: React.FC = () => {
       <div className="glass" style={{ display: "flex", flexDirection: "column", height: "100%", padding: "16px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
           <h2 style={{ fontSize: "14px", fontWeight: 600, fontFamily: "var(--font-display)" }}>Conversations</h2>
-          <button 
-            onClick={handleNewSession}
-            style={{
-              background: "rgba(99,102,241,0.1)",
-              border: "1px solid var(--border)",
-              color: "var(--primary)",
-              padding: "4px 8px",
-              borderRadius: "6px",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
-              fontSize: "11px",
-              fontWeight: 600
-            }}
-          >
-            <Plus size={12} /> New
-          </button>
+          {!isCreatingSession && (
+            <button 
+              onClick={() => setIsCreatingSession(true)}
+              title="Create a new chat conversation session"
+              style={{
+                background: "rgba(99,102,241,0.1)",
+                border: "1px solid var(--border)",
+                color: "var(--primary)",
+                padding: "4px 8px",
+                borderRadius: "6px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                fontSize: "11px",
+                fontWeight: 600
+              }}
+            >
+              <Plus size={12} /> New
+            </button>
+          )}
         </div>
+
+        {/* Inline Session Creator */}
+        {isCreatingSession && (
+          <div style={{ 
+            display: "flex", 
+            flexDirection: "column", 
+            gap: "8px", 
+            padding: "10px", 
+            background: "rgba(255, 255, 255, 0.02)", 
+            border: "1px solid var(--border)", 
+            borderRadius: "8px", 
+            marginBottom: "12px" 
+          }}>
+            <input 
+              type="text"
+              value={newSessionName}
+              onChange={(e) => setNewSessionName(e.target.value)}
+              placeholder="Session name (e.g. build_dev)"
+              title="Type a unique name for this chat session and press Enter to save"
+              style={{
+                width: "100%",
+                padding: "6px 10px",
+                background: "rgba(0,0,0,0.3)",
+                border: "1px solid var(--border)",
+                borderRadius: "6px",
+                color: "white",
+                fontSize: "12px",
+                outline: "none"
+              }}
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleConfirmNewSession();
+                if (e.key === "Escape") handleCancelNewSession();
+              }}
+            />
+            <div style={{ display: "flex", gap: "6px", justifyContent: "flex-end" }}>
+              <button 
+                type="button"
+                onClick={handleCancelNewSession}
+                title="Cancel creating new session"
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "var(--text-secondary)",
+                  cursor: "pointer",
+                  fontSize: "11px",
+                  padding: "4px 8px"
+                }}
+              >
+                Cancel
+              </button>
+              <button 
+                type="button"
+                onClick={handleConfirmNewSession}
+                title="Save and switch to the new session"
+                style={{
+                  background: "rgba(99,102,241,0.15)",
+                  border: "1px solid var(--primary)",
+                  color: "var(--primary)",
+                  padding: "4px 10px",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  fontSize: "11px",
+                  fontWeight: 600
+                }}
+              >
+                Create
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Sessions list */}
         <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -275,6 +361,7 @@ export const Chat: React.FC = () => {
               <div 
                 key={s.id}
                 onClick={() => setActiveSession(s.id)}
+                title={`Switch to chat session: ${s.id}`}
                 style={{
                   padding: "10px 12px",
                   borderRadius: "8px",
@@ -484,6 +571,7 @@ export const Chat: React.FC = () => {
             onChange={(e) => setInput(e.target.value)}
             disabled={sending}
             placeholder={sending ? "Agent is processing sandbox request..." : "Ask the DevOps Agent to build, analyze, check netlify..."}
+            title="Type your request or message to the DevOps Agent"
             style={{
               flex: 1,
               padding: "12px 16px",
@@ -502,6 +590,7 @@ export const Chat: React.FC = () => {
             type="submit"
             disabled={!input.trim() || sending}
             className="glow-btn"
+            title="Send message to DevOps Agent"
             style={{
               padding: "0 18px",
               display: "flex",

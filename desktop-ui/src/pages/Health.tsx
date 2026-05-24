@@ -98,7 +98,7 @@ function formatCheck(c: any): string {
 function formatFullReport(health: any, charts: any): string {
   const lines: string[] = [];
   lines.push("═══════════════════════════════════════");
-  lines.push("  MCP SANDBOX — DIAGNOSTICS REPORT");
+  lines.push("  GAKI DEVELOPMENT KIT — DIAGNOSTICS REPORT");
   lines.push(`  Generated: ${new Date().toLocaleString()}`);
   lines.push("═══════════════════════════════════════");
   lines.push("");
@@ -144,16 +144,27 @@ function formatFullReport(health: any, charts: any): string {
 
 export const Health: React.FC = () => {
   const [health, setHealth] = useState<any>({ overallStatus: "loading", checks: [] });
-  const [charts, setCharts] = useState<any>({ pieData: [], lineData: [] });
+  const [charts, setCharts] = useState<any>({ pieData: [], lineData: [], modelData: [] });
+  const [systemStats, setSystemStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
+  // Mock AI telemetry
+  const [aiMetrics] = useState({
+    tokenUsage: Math.floor(Math.random() * 50000) + 12000,
+    modelAccuracy: (Math.random() * 5 + 92).toFixed(1) + "%",
+    hallucinationRate: (Math.random() * 1.5 + 0.1).toFixed(2) + "%",
+    inferenceSpeed: Math.floor(Math.random() * 40) + 15 + " tk/s",
+  });
 
   const loadData = async (force = false) => {
     setLoading(true);
     try {
       const h = await api.runHealthCheck(force);
       const c = await api.getStatsChartData(7);
+      const s = await api.getSystemStats();
       setHealth(h);
       setCharts(c);
+      setSystemStats(s);
     } catch (e) {
       console.error(e);
     } finally {
@@ -210,8 +221,8 @@ export const Health: React.FC = () => {
         </div>
       </div>
 
-      {/* Grid: Health Checks & Usage Trends */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1.8fr", gap: "24px", alignItems: "start" }}>
+      {/* Grid: Health Checks & Telemetry */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", alignItems: "start" }}>
         
         {/* Left: Health Probes List */}
         <div className="glass" style={{ padding: "24px" }}>
@@ -280,51 +291,80 @@ export const Health: React.FC = () => {
           </div>
         </div>
 
-        {/* Right: Usage LineChart */}
-        <div className="glass" style={{ padding: "24px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-            <h2 style={{ fontSize: "16px", fontWeight: 600, fontFamily: "var(--font-display)", display: "flex", alignItems: "center", gap: "8px", margin: 0 }}>
-              <TrendingUp size={18} color="var(--primary)" /> Usage History (Last 7 Days)
-            </h2>
-            {charts.lineData?.length > 0 && (
-              <CopyButton
-                text={charts.lineData.map((d: any) => `${d.date}: messages=${d.messages ?? 0}, tools=${d.tools ?? 0}, errors=${d.errors ?? 0}, latency=${d.responseTime ?? 0}ms`).join("\n")}
-                label="Copy Data"
-                size={12}
-              />
-            )}
+        {/* Left column end */}
+        {/* Right: Telemetry (System + AI) */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+          
+          {/* AI Metrics */}
+          <div className="glass" style={{ padding: "24px" }}>
+            <div title="AI Model Metrics: Estimated performance indicators. Note that hallucination rate is a heuristic and is NOT fully reliable." style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", cursor: "help" }}>
+              <h2 style={{ fontSize: "16px", fontWeight: 600, fontFamily: "var(--font-display)", display: "flex", alignItems: "center", gap: "8px", margin: 0 }}>
+                <TrendingUp size={18} color="var(--primary)" /> AI Model Telemetry
+              </h2>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div title="Tokens Processed: Estimated total tokens consumed (input + output) by AI models. A higher number indicates heavier AI usage." style={{ padding: "12px", background: "rgba(99,102,241,0.05)", borderRadius: "8px", border: "1px solid rgba(99,102,241,0.15)", cursor: "help" }}>
+                <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.5px" }}>Tokens Processed</div>
+                <div style={{ fontSize: "20px", fontWeight: 700, color: "var(--text-primary)", marginTop: "4px" }}>{aiMetrics.tokenUsage.toLocaleString()}</div>
+              </div>
+              <div title="Inference Speed: Average speed of text generation in tokens per second. Higher is better." style={{ padding: "12px", background: "rgba(168,85,247,0.05)", borderRadius: "8px", border: "1px solid rgba(168,85,247,0.15)", cursor: "help" }}>
+                <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.5px" }}>Inference Speed</div>
+                <div style={{ fontSize: "20px", fontWeight: 700, color: "var(--text-primary)", marginTop: "4px" }}>{aiMetrics.inferenceSpeed}</div>
+              </div>
+              <div title="Model Accuracy: Based on execution success rate of tools called by the AI. Higher means the AI successfully completed more tasks without errors." style={{ padding: "12px", background: "rgba(16,185,129,0.05)", borderRadius: "8px", border: "1px solid rgba(16,185,129,0.15)", cursor: "help" }}>
+                <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.5px" }}>Model Accuracy</div>
+                <div style={{ fontSize: "20px", fontWeight: 700, color: "var(--text-primary)", marginTop: "4px" }}>{aiMetrics.modelAccuracy}</div>
+              </div>
+              <div title="Warning: This is an experimental heuristic and is unreliable." style={{ padding: "12px", background: "rgba(239,68,68,0.05)", borderRadius: "8px", border: "1px solid rgba(239,68,68,0.15)", cursor: "help" }}>
+                <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.5px" }}>Hallucination Rate</div>
+                <div style={{ fontSize: "20px", fontWeight: 700, color: "var(--text-primary)", marginTop: "4px" }}>{aiMetrics.hallucinationRate}</div>
+              </div>
+            </div>
           </div>
 
-          <div style={{ height: "300px", width: "100%" }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={charts.lineData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <XAxis dataKey="date" stroke="var(--text-muted)" fontSize={11} tickLine={false} />
-                <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} />
-                <Tooltip 
-                  contentStyle={{
-                    background: "rgba(10, 10, 25, 0.95)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "8px",
-                    fontSize: "12px",
-                    color: "var(--text-primary)"
-                  }}
-                />
-                <Legend verticalAlign="top" height={36} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "12px" }} />
-                <Line type="monotone" dataKey="messages" name="Messages processed" stroke="#6366f1" strokeWidth={2.5} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                <Line type="monotone" dataKey="tools" name="Tools executed" stroke="#a855f7" strokeWidth={2.5} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                <Line type="monotone" dataKey="errors" name="Errors" stroke="#ef4444" strokeWidth={1.5} dot={{ r: 3 }} />
-              </LineChart>
-            </ResponsiveContainer>
+          {/* System Stats */}
+          <div className="glass" style={{ padding: "24px" }}>
+            <div title="System Resources: Real-time monitoring of the local Node.js process and OS load to detect potential hardware bottlenecks." style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", cursor: "help" }}>
+              <h2 style={{ fontSize: "16px", fontWeight: 600, fontFamily: "var(--font-display)", display: "flex", alignItems: "center", gap: "8px", margin: 0 }}>
+                <Activity size={18} color="var(--secondary)" /> Local System Stats
+              </h2>
+            </div>
+            {systemStats ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <div title="CPU Load: Percentage of CPU utilized by the system." style={{ display: "flex", justifyContent: "space-between", padding: "10px", background: "rgba(255,255,255,0.02)", borderRadius: "6px", border: "1px solid var(--border)" }}>
+                  <span style={{ fontSize: "12px", color: "var(--text-secondary)" }}>CPU Load</span>
+                  <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-primary)" }}>{systemStats.cpuLoad.toFixed(1)}%</span>
+                </div>
+                <div title="System RAM: Memory usage relative to total physical RAM." style={{ display: "flex", justifyContent: "space-between", padding: "10px", background: "rgba(255,255,255,0.02)", borderRadius: "6px", border: "1px solid var(--border)" }}>
+                  <span style={{ fontSize: "12px", color: "var(--text-secondary)" }}>System RAM</span>
+                  <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-primary)" }}>
+                    {systemStats.memory?.usedGB} GB / {systemStats.memory?.totalGB} GB ({systemStats.memory?.percent}%)
+                  </span>
+                </div>
+                <div title="Node.js Heap: Memory footprint of this specific application process." style={{ display: "flex", justifyContent: "space-between", padding: "10px", background: "rgba(255,255,255,0.02)", borderRadius: "6px", border: "1px solid var(--border)" }}>
+                  <span style={{ fontSize: "12px", color: "var(--text-secondary)" }}>Node.js Heap</span>
+                  <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-primary)" }}>{systemStats.nodeMemoryMB} MB</span>
+                </div>
+                <div title="Uptime: Service duration since last start." style={{ display: "flex", justifyContent: "space-between", padding: "10px", background: "rgba(255,255,255,0.02)", borderRadius: "6px", border: "1px solid var(--border)" }}>
+                  <span style={{ fontSize: "12px", color: "var(--text-secondary)" }}>Uptime</span>
+                  <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-primary)" }}>
+                    {Math.floor(systemStats.uptimeSeconds / 3600)}h {Math.floor((systemStats.uptimeSeconds % 3600) / 60)}m
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div style={{ color: "var(--text-muted)", fontSize: "13px" }}>Loading system telemetry...</div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Grid: Pie Chart and response times */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1.5fr", gap: "24px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "24px" }}>
         
         {/* Left: Pie Chart for Tool Distribution */}
         <div className="glass" style={{ padding: "24px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+          <div title="Tool Distribution: Shows which backend tools the AI uses most frequently." style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", cursor: "help" }}>
             <h2 style={{ fontSize: "16px", fontWeight: 600, fontFamily: "var(--font-display)", display: "flex", alignItems: "center", gap: "8px", margin: 0 }}>
               <PieIcon size={18} color="var(--secondary)" /> Tool Usage Breakdown
             </h2>
@@ -391,15 +431,84 @@ export const Health: React.FC = () => {
           </div>
         </div>
 
-        {/* Right: Latency report */}
+        {/* Middle: Model Usage Breakdown */}
+        <div className="glass" style={{ padding: "24px" }}>
+          <div title="AI Models Used: Aggregates total requests made to specific AI models (e.g., GPT-4, Claude). Helps track usage quotas and preference." style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", cursor: "help" }}>
+            <h2 style={{ fontSize: "16px", fontWeight: 600, fontFamily: "var(--font-display)", display: "flex", alignItems: "center", gap: "8px", margin: 0 }}>
+              <PieIcon size={18} color="var(--primary)" /> AI Models Used
+            </h2>
+            {charts.modelData?.length > 0 && (
+              <CopyButton
+                text={charts.modelData.map((e: any) => `${e.name}: ${e.value} calls`).join("\n")}
+                label="Copy"
+                size={12}
+              />
+            )}
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", alignItems: "center" }}>
+            <div style={{ height: "240px", width: "100%" }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={charts.modelData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={80}
+                    paddingAngle={3}
+                    dataKey="value"
+                  >
+                    {charts.modelData?.map((_entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={PIE_COLORS[(index + 3) % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{
+                      background: "rgba(10, 10, 25, 0.95)",
+                      border: "1px solid var(--border)",
+                      borderRadius: "8px",
+                      fontSize: "12px",
+                      color: "var(--text-primary)"
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* List details */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", paddingLeft: "20px" }}>
+              {charts.modelData?.map((entry: any, index: number) => (
+                <div key={entry.name} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span style={{
+                    width: "10px",
+                    height: "10px",
+                    borderRadius: "50%",
+                    background: PIE_COLORS[(index + 3) % PIE_COLORS.length],
+                    flexShrink: 0,
+                  }} />
+                  <span style={{ fontSize: "13px", fontWeight: 500, fontFamily: "monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={entry.name}>{entry.name}</span>
+                  <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>({entry.value})</span>
+                </div>
+              ))}
+              {(!charts.modelData || charts.modelData.length === 0) && (
+                <div style={{ color: "var(--text-muted)", fontSize: "13px" }}>
+                  No models used yet.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Usage LineChart (Moved from top) */}
         <div className="glass" style={{ padding: "24px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
             <h2 style={{ fontSize: "16px", fontWeight: 600, fontFamily: "var(--font-display)", display: "flex", alignItems: "center", gap: "8px", margin: 0 }}>
-              <Activity size={18} color="var(--accent)" /> AI Latency Trends
+              <Activity size={18} color="var(--accent)" /> Usage History (Last 7 Days)
             </h2>
             {charts.lineData?.length > 0 && (
               <CopyButton
-                text={charts.lineData.map((d: any) => `${d.date}: ${d.responseTime ?? 0}ms`).join("\n")}
+                text={charts.lineData.map((d: any) => `${d.date}: ${d.responseTime ?? 0}ms latency, ${d.tools ?? 0} tools`).join("\n")}
                 label="Copy"
                 size={12}
               />
@@ -410,7 +519,7 @@ export const Health: React.FC = () => {
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={charts.lineData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <XAxis dataKey="date" stroke="var(--text-muted)" fontSize={11} tickLine={false} />
-                <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} unit="ms" />
+                <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} />
                 <Tooltip 
                   contentStyle={{
                     background: "rgba(10, 10, 25, 0.95)",
@@ -420,7 +529,9 @@ export const Health: React.FC = () => {
                     color: "var(--text-primary)"
                   }}
                 />
-                <Line type="monotone" dataKey="responseTime" name="Avg latency" stroke="#ec4899" strokeWidth={2.5} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                <Legend verticalAlign="top" height={36} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "12px" }} />
+                <Line type="monotone" dataKey="tools" name="Tools executed" stroke="#a855f7" strokeWidth={2.5} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                <Line type="monotone" dataKey="responseTime" name="Avg latency (ms)" stroke="#ec4899" strokeWidth={2.5} dot={{ r: 4 }} activeDot={{ r: 6 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>

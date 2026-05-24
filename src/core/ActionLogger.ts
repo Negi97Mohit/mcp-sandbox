@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
+import os from "os";
 
 export interface ActionLogEntry {
     id: string;                    // UUID
@@ -12,13 +13,22 @@ export interface ActionLogEntry {
     result: any;
     durationMs: number;
     status: 'success' | 'error';
-    error?: string;
+    error?: string | undefined;
 }
 
 class ActionLogger {
-    private logsDir = path.join(process.cwd(), "action_logs");
+    private logsDir: string;
 
     constructor() {
+        const appName = "Gaki - Development Kit";
+        const home = os.homedir();
+        const userDataPath = process.platform === "win32"
+            ? path.join(process.env.APPDATA || path.join(home, "AppData", "Roaming"), appName)
+            : process.platform === "darwin"
+                ? path.join(home, "Library", "Application Support", appName)
+                : path.join(home, ".config", appName);
+
+        this.logsDir = path.join(userDataPath, "action_logs");
         this.ensureDirectory();
     }
 

@@ -1,0 +1,19 @@
+[
+  {
+    "id": "b44b9a96-4610-4898-afb2-907a230f39bf",
+    "timestamp": "2026-05-23T16:18:17.604Z",
+    "platform": "discord",
+    "userId": "test-logger-user",
+    "toolName": "run_shell",
+    "arguments": {
+      "command": "echo Log test!"
+    },
+    "result": {
+      "stdout": "Log test!\r\n",
+      "exitCode": 0,
+      "currentDir": "C:\\Users\\Dell\\Desktop\\mcp-sandbox"
+    },
+    "durationMs": 56,
+    "status": "success"
+  }
+]

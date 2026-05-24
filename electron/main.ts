@@ -16,7 +16,7 @@ function createWindow() {
         height: 900,
         minWidth: 1024,
         minHeight: 700,
-        title: "MCP Sandbox",
+        title: "Gaki - Development Kit",
         titleBarStyle: "hidden",
         frame: false,
         webPreferences: {
@@ -39,7 +39,7 @@ function createWindow() {
         mainWindow.webContents.openDevTools();
     } else {
         // In production, load the built HTML file
-        mainWindow.loadFile(path.join(__dirname, "../desktop-ui/dist/index.html")).catch((err) => {
+        mainWindow.loadFile(path.join(app.getAppPath(), "desktop-ui/dist/index.html")).catch((err) => {
             console.error("Failed to load production HTML:", err);
         });
     }
@@ -57,7 +57,7 @@ function createWindow() {
 }
 
 function getAppIcon() {
-    const iconPath = path.join(__dirname, "../assets/icon.png");
+    const iconPath = path.join(app.getAppPath(), "assets/icon.png");
     if (fs.existsSync(iconPath)) {
         return nativeImage.createFromPath(iconPath);
     }
@@ -65,7 +65,7 @@ function getAppIcon() {
 }
 
 function createTray() {
-    const trayIconPath = path.join(__dirname, "../assets/tray-icon.png");
+    const trayIconPath = path.join(app.getAppPath(), "assets/tray-icon.png");
     let trayIcon;
 
     if (fs.existsSync(trayIconPath)) {
@@ -116,7 +116,7 @@ function createTray() {
         },
     ]);
 
-    tray.setToolTip("MCP Sandbox Control Panel");
+    tray.setToolTip("Gaki Development Kit");
     tray.setContextMenu(contextMenu);
 
     tray.on("double-click", () => {
@@ -126,7 +126,7 @@ function createTray() {
 }
 
 app.whenReady().then(async () => {
-    console.log("Initializing MCP Sandbox native app...");
+    console.log("Initializing Gaki Development Kit native app...");
 
     // Register all IPC handlers
     registerAllIpcHandlers();

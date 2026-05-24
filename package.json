@@ -41,8 +41,8 @@
     "wait-on": "^9.0.10"
   },
   "build": {
-    "appId": "com.mcpsandbox.desktop",
-    "productName": "MCP Sandbox",
+    "appId": "com.gaki.desktop",
+    "productName": "Gaki - Development Kit",
     "directories": {
       "output": "release"
     },
@@ -69,7 +69,18 @@
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico",
+      "installerSidebar": "assets/installerSidebar.png",
+      "uninstallerSidebar": "assets/installerSidebar.png",
+      "installerHeader": "assets/installerHeader.png",
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "Gaki Development Kit",
+      "runAfterFinish": true
     }
   }
 }

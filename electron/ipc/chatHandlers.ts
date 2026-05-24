@@ -175,7 +175,7 @@ SYSTEM INFO:
                     content: finalAiMessage.content || "",
                 });
 
-                await recordResponseTime(Date.now() - startTime);
+                await recordResponseTime(Date.now() - startTime, CONFIG.MODEL_NAME);
 
                 sendUpdate({
                     type: "complete",
@@ -183,7 +183,7 @@ SYSTEM INFO:
                 });
 
             } else {
-                await recordResponseTime(Date.now() - startTime);
+                await recordResponseTime(Date.now() - startTime, CONFIG.MODEL_NAME);
                 sendUpdate({
                     type: "complete",
                     content: aiMessage.content || "",

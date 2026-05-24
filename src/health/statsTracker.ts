@@ -1,8 +1,17 @@
 import * as fs from "fs/promises";
 import * as path from "path";
+import * as os from "os";
 
-// Stats storage directory
-const STATS_DIR = path.join(process.cwd(), "stats");
+// Stats storage directory inside AppData
+const appName = "Gaki - Development Kit";
+const home = os.homedir();
+const userDataPath = process.platform === "win32"
+    ? path.join(process.env.APPDATA || path.join(home, "AppData", "Roaming"), appName)
+    : process.platform === "darwin"
+        ? path.join(home, "Library", "Application Support", appName)
+        : path.join(home, ".config", appName);
+
+const STATS_DIR = path.join(userDataPath, "stats");
 
 export interface DailyStats {
     date: string;
@@ -14,6 +23,7 @@ export interface DailyStats {
     avgResponseTime: number;
     minResponseTime: number;
     maxResponseTime: number;
+    models: Record<string, number>;
 }
 
 // In-memory cache of today's stats
@@ -57,7 +67,8 @@ async function getTodayStats(): Promise<DailyStats> {
             responseTimes: [],
             avgResponseTime: 0,
             minResponseTime: 0,
-            maxResponseTime: 0
+            maxResponseTime: 0,
+            models: {}
         };
         todayDate = today;
     }
@@ -107,9 +118,14 @@ export async function recordError(): Promise<void> {
 /**
  * Record a response time
  */
-export async function recordResponseTime(timeMs: number): Promise<void> {
+export async function recordResponseTime(timeMs: number, modelName?: string): Promise<void> {
     const stats = await getTodayStats();
     stats.responseTimes.push(timeMs);
+    
+    if (modelName) {
+        if (!stats.models) stats.models = {};
+        stats.models[modelName] = (stats.models[modelName] || 0) + 1;
+    }
 
     // Update aggregates
     const times = stats.responseTimes;
@@ -149,7 +165,8 @@ export async function getStatsHistory(days: number = 7): Promise<DailyStats[]> {
                 responseTimes: [],
                 avgResponseTime: 0,
                 minResponseTime: 0,
-                maxResponseTime: 0
+                maxResponseTime: 0,
+                models: {}
             });
         }
     }
@@ -168,6 +185,23 @@ export async function getToolUsageBreakdown(days: number = 7): Promise<Record<st
     for (const day of history) {
         for (const [tool, count] of Object.entries(day.toolCalls)) {
             breakdown[tool] = (breakdown[tool] || 0) + count;
+        }
+    }
+
+    return breakdown;
+}
+
+/**
+ * Get aggregated model usage across all days
+ */
+export async function getModelUsageBreakdown(days: number = 7): Promise<Record<string, number>> {
+    const history = await getStatsHistory(days);
+    const breakdown: Record<string, number> = {};
+
+    for (const day of history) {
+        if (!day.models) continue;
+        for (const [model, count] of Object.entries(day.models)) {
+            breakdown[model] = (breakdown[model] || 0) + count;
         }
     }
 

@@ -13,6 +13,8 @@ import { generateChartEmbeds, generateStatsEmbed } from "../health/chartGenerato
 import * as fs from "fs";
 import * as path from "path";
 
+import { registerAdminNotifier } from "../core/NotificationManager.js";
+
 // Initialize a debug log file in process.cwd()
 const debugLogPath = path.join(process.cwd(), "discord_debug.log");
 try {
@@ -47,6 +49,21 @@ const chatHistory: Map<string, any[]> = new Map();
 
 client.once("ready", async () => {
     logDebug(`🤖 Reasoning Bot Online: ${client.user?.tag}`);
+
+    // Register dynamic notification channel for the Admin
+    registerAdminNotifier(async (msg: string) => {
+        const adminId = CONFIG.ALLOWED_USER_ID;
+        if (!adminId) return;
+        try {
+            const adminUser = await client.users.fetch(adminId);
+            if (adminUser) {
+                const dmChannel = await adminUser.createDM();
+                await dmChannel.send(msg);
+            }
+        } catch (err) {
+            logDebug(`⚠️ Failed to deliver DM to admin: ${err}`);
+        }
+    });
 
     // Send startup health report to admin
     await sendStartupHealthReport();

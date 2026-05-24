@@ -6,9 +6,9 @@ export function registerWorkspaceHandlers() {
         return workspaceStore.list();
     });
 
-    ipcMain.handle("workspaces:create", (_event, name: string, dirPath: string) => {
+    ipcMain.handle("workspaces:create", async (_event, name: string, dirPath: string) => {
         try {
-            const ws = workspaceStore.create(name, dirPath);
+            const ws = await workspaceStore.create(name, dirPath);
             return { success: true, workspace: ws };
         } catch (e: any) {
             return { success: false, error: e.message };

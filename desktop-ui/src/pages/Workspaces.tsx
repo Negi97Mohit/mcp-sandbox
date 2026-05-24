@@ -77,7 +77,7 @@ export const Workspaces: React.FC = () => {
                 </div>
                 <div style={{ display: "flex", gap: "10px", flexShrink: 0 }}>
                     <button onClick={loadWorkspaces} style={iconBtnStyle} title="Refresh"><RefreshCw size={15} /></button>
-                    <button onClick={() => { setShowAdd(!showAdd); setError(""); }} style={primaryBtnStyle}>
+                    <button onClick={() => { setShowAdd(!showAdd); setError(""); }} className="glow-btn" style={primaryBtnStyle}>
                         <Plus size={15} /> Add Workspace
                     </button>
                 </div>
@@ -107,7 +107,7 @@ export const Workspaces: React.FC = () => {
                     </div>
                     <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
                         <button onClick={() => setShowAdd(false)} style={secondaryBtnStyle}>Cancel</button>
-                        <button onClick={handleAdd} disabled={saving} style={primaryBtnStyle}>{saving ? "Adding..." : "Add Workspace"}</button>
+                        <button onClick={handleAdd} disabled={saving} className="glow-btn" style={primaryBtnStyle}>{saving ? "Adding..." : "Add Workspace"}</button>
                     </div>
                 </div>
             )}
@@ -131,8 +131,8 @@ export const Workspaces: React.FC = () => {
                                 ...cardStyle,
                                 borderLeft: `3px solid ${ws.isActive ? "var(--primary)" : "transparent"}`,
                                 background: ws.isActive
-                                    ? "linear-gradient(135deg, rgba(99,102,241,0.09), rgba(10,10,30,0.65))"
-                                    : "rgba(15,15,35,0.6)",
+                                    ? "var(--sidebar-active-bg, var(--primary-glow))"
+                                    : "var(--bg-card)",
                                 cursor: ws.isActive ? "default" : "pointer",
                                 transition: "all 0.2s ease",
                             }}
@@ -141,7 +141,7 @@ export const Workspaces: React.FC = () => {
                                 <div style={{ display: "flex", alignItems: "center", gap: "14px", flex: 1, minWidth: 0 }}>
                                     <div style={{
                                         width: "44px", height: "44px", borderRadius: "10px", flexShrink: 0,
-                                        background: ws.isActive ? "rgba(99,102,241,0.2)" : "rgba(30,30,60,0.5)",
+                                        background: ws.isActive ? "var(--primary-glow)" : "var(--bg-card)",
                                         display: "flex", alignItems: "center", justifyContent: "center",
                                     }}>
                                         <FolderOpen size={20} color={ws.isActive ? "var(--primary)" : "rgba(148,163,184,0.4)"} />
@@ -150,7 +150,7 @@ export const Workspaces: React.FC = () => {
                                         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "3px" }}>
                                             <span style={{ fontWeight: 600, fontSize: "14px", color: "var(--text-primary)" }}>{ws.name}</span>
                                             {ws.isActive && (
-                                                <span style={{ fontSize: "9px", padding: "2px 8px", background: "rgba(99,102,241,0.22)", borderRadius: "10px", color: "var(--primary)", fontWeight: 700, letterSpacing: "0.8px", textTransform: "uppercase" }}>
+                                                <span style={{ fontSize: "9px", padding: "2px 8px", background: "var(--primary-glow)", borderRadius: "10px", color: "var(--primary)", fontWeight: 700, letterSpacing: "0.8px", textTransform: "uppercase" }}>
                                                     Active
                                                 </span>
                                             )}
@@ -183,26 +183,24 @@ export const Workspaces: React.FC = () => {
 };
 
 const cardStyle: React.CSSProperties = {
-    background: "rgba(15,15,35,0.6)",
-    border: "1px solid rgba(99,102,241,0.12)",
+    background: "var(--bg-card)",
+    border: "1px solid var(--border)",
     borderRadius: "12px",
     padding: "20px",
     backdropFilter: "blur(10px)",
 };
 const primaryBtnStyle: React.CSSProperties = {
     display: "flex", alignItems: "center", gap: "6px",
-    background: "linear-gradient(135deg, var(--primary), var(--secondary))",
-    color: "#fff", border: "none", borderRadius: "8px",
     padding: "8px 16px", fontSize: "13px", fontWeight: 600, cursor: "pointer",
 };
 const secondaryBtnStyle: React.CSSProperties = {
-    background: "rgba(30,30,60,0.5)", color: "var(--text-secondary)",
-    border: "1px solid rgba(99,102,241,0.15)", borderRadius: "8px",
+    background: "var(--bg-card)", color: "var(--text-secondary)",
+    border: "1px solid var(--border)", borderRadius: "8px",
     padding: "8px 16px", fontSize: "13px", cursor: "pointer",
 };
 const iconBtnStyle: React.CSSProperties = {
-    background: "rgba(30,30,60,0.5)", color: "var(--text-secondary)",
-    border: "1px solid rgba(99,102,241,0.15)", borderRadius: "8px",
+    background: "var(--bg-card)", color: "var(--text-secondary)",
+    border: "1px solid var(--border)", borderRadius: "8px",
     padding: "8px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
 };
 const labelStyle: React.CSSProperties = {
@@ -210,7 +208,7 @@ const labelStyle: React.CSSProperties = {
 };
 const inputStyle: React.CSSProperties = {
     width: "100%", boxSizing: "border-box",
-    background: "rgba(10,10,30,0.6)", border: "1px solid rgba(99,102,241,0.2)",
+    background: "var(--bg-deep)", border: "1px solid var(--border)",
     borderRadius: "8px", padding: "9px 12px", color: "var(--text-primary)",
     fontSize: "13px", outline: "none", fontFamily: "inherit",
 };

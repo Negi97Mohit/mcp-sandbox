@@ -36,7 +36,7 @@ async function fetchOpenRouterModels(): Promise<any[]> {
         const response = await fetch("https://openrouter.ai/api/v1/models", {
             headers: {
                 "HTTP-Referer": "https://discord-agent.com",
-                "X-Title": "MCP Sandbox",
+                "X-Title": "Gaki - Development Kit",
             },
         });
 
