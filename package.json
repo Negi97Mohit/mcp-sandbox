@@ -1,18 +1,31 @@
 {
   "name": "mcp-sandbox",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
   "main": "index.js",
+  "description": "Autonomous multi-agent SDLC system — Planner→Implementer→Verifier pipeline with eval-driven reliability, GitHub SDLC integration, and human-in-the-loop approval gates.",
   "scripts": {
     "dev": "npx tsx src/index.ts",
+    "dev:desktop": "node run-desktop.js",
     "start": "node dist/src/index.js",
     "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "eval": "npx tsx src/evals/evalRunner.ts",
+    "test": "echo \"No unit tests yet. Run eval suite with: npm run eval\""
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "ai-agent",
+    "multi-agent",
+    "llm",
+    "devops",
+    "discord",
+    "langfuse",
+    "evals",
+    "sdlc",
+    "github",
+    "netlify"
+  ],
+  "author": "Mohit Negi",
   "license": "ISC",
-  "description": "",
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@types/node": "^25.0.10",
@@ -20,12 +33,14 @@
     "discord.js": "^14.25.1",
     "dotenv": "^17.2.3",
     "firebase-admin": "^13.6.0",
+    "langfuse": "^3.38.20",
     "openai": "^6.16.0",
     "simple-git": "^3.33.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
   "devDependencies": {
+    "electron": "^42.3.2",
     "tsx": "^4.21.0"
   }
 }

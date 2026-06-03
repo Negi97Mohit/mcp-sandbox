@@ -31,7 +31,11 @@ export async function handleSearchTool(name: string, args: any) {
         console.log(`🔎 Searching for Git repos starting at: ${startPath}`);
 
         const foundRepos: string[] = [];
-        const ignoreDirs = new Set(["node_modules", "dist", "build", ".vscode", ".idea", "AppData", "Application Data"]);
+        const ignoreDirs = new Set([
+            "node_modules", "dist", "build", ".vscode", ".idea", "AppData",
+            "Application Data", "Windows", "Program Files", "Program Files (x86)",
+            "System Volume Information", "$Recycle.Bin", "Library", "System", "Applications"
+        ]);
 
         function search(dir: string, depth: number) {
             if (depth > maxDepth) return;

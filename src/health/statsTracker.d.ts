@@ -33,4 +33,8 @@ export declare function getStatsHistory(days?: number): Promise<DailyStats[]>;
  * Get aggregated tool usage across all days
  */
 export declare function getToolUsageBreakdown(days?: number): Promise<Record<string, number>>;
+/**
+ * Get aggregated model usage across all days (stub implementation)
+ */
+export declare function getModelUsageBreakdown(days?: number): Promise<Record<string, number>>;
 //# sourceMappingURL=statsTracker.d.ts.map

@@ -96,7 +96,11 @@ function parseToolCallsFromText(text) {
     }
     return calls.length > 0 ? calls : null;
 }
-export async function callOpenRouter(messages) {
+export async function callOpenRouter(messages, allowedToolNames) {
+    // Filter tools if a subset is specified (used by specialist agents)
+    const toolsToSend = allowedToolNames
+        ? allTools.filter((t) => allowedToolNames.includes(t.function.name))
+        : allTools;
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -108,7 +112,7 @@ export async function callOpenRouter(messages) {
         body: JSON.stringify({
             model: CONFIG.MODEL_NAME,
             messages: messages,
-            tools: allTools,
+            tools: toolsToSend,
             tool_choice: "auto",
         }),
     });

@@ -40,5 +40,7 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true
-  }
+  },
+  "include": ["src/**/*", "index.ts", "check_models.ts", "verify_sandbox.ts"],
+  "exclude": ["node_modules", "electron/**/*", "desktop-ui/**/*", "dist/**/*"]
 }

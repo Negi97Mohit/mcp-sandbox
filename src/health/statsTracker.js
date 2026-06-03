@@ -140,4 +140,10 @@ export async function getToolUsageBreakdown(days = 7) {
     }
     return breakdown;
 }
+/**
+ * Get aggregated model usage across all days (stub implementation)
+ */
+export async function getModelUsageBreakdown(days = 7) {
+    return {};
+}
 //# sourceMappingURL=statsTracker.js.map

@@ -173,3 +173,10 @@ export async function getToolUsageBreakdown(days: number = 7): Promise<Record<st
 
     return breakdown;
 }
+
+/**
+ * Get aggregated model usage across all days (stub implementation)
+ */
+export async function getModelUsageBreakdown(days: number = 7): Promise<Record<string, number>> {
+    return {};
+}

@@ -10,12 +10,32 @@ dotenv.config();
 const execAsync = promisify(exec);
 
 // --- CONFIGURATION ---
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY!;
-const DISCORD_TOKEN = process.env.DISCORD_TOKEN!;
-const ALLOWED_USER_ID = process.env.ALLOWED_USER_ID!;
+let OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY!;
+let DISCORD_TOKEN = process.env.DISCORD_TOKEN!;
+let ALLOWED_USER_ID = process.env.ALLOWED_USER_ID!;
+let MODEL_NAME = process.env.MODEL_NAME || "nvidia/nemotron-3-nano-30b-a3b:free";
 
-// 🚀 REASONING MODEL (DeepSeek R1 is excellent for this)
-const MODEL_NAME = process.env.MODEL_NAME || "nvidia/nemotron-3-nano-30b-a3b:free";
+// Watch .env for changes in standalone CLI
+if (fs.existsSync(".env")) {
+  try {
+    fs.watch(".env", (eventType) => {
+      if (eventType === "change") {
+        try {
+          dotenv.config({ override: true });
+          OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY!;
+          DISCORD_TOKEN = process.env.DISCORD_TOKEN!;
+          ALLOWED_USER_ID = process.env.ALLOWED_USER_ID!;
+          MODEL_NAME = process.env.MODEL_NAME || "nvidia/nemotron-3-nano-30b-a3b:free";
+          console.log("♻️  Standalone CLI reloaded config from .env successfully.");
+        } catch (e) {
+          console.error("Failed to reload standalone config:", e);
+        }
+      }
+    });
+  } catch (e) {
+    console.warn("⚠️ Failed to setup standalone .env watch:", e);
+  }
+}
 
 // const SAFE_ROOT = path.join(process.cwd(), "workspace");
 let currentDir = process.cwd();

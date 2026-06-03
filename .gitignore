@@ -1,1 +1,24 @@
+# Secrets
 .env
+service-account.json
+
+# Node
+node_modules/
+dist/
+
+# Build artifacts
+*.js.map
+*.d.ts.map
+
+# Agent output directories (contain sensitive run data)
+traces/
+eval_results/
+workspaces/
+health_reports/
+stats/
+chat_history/
+action_logs/
+
+# OS
+.DS_Store
+Thumbs.db

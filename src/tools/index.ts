@@ -3,6 +3,7 @@ import { fileTools, handleFileTool } from "./files.js";
 import { searchTools, handleSearchTool } from "./search.js";
 import { netlifyTools, handleNetlifyTool } from "./netlify.js";
 import { netlifyMonitorTools, handleNetlifyMonitorTool } from "./netlifyMonitor.js";
+import { githubTools, handleGitHubTool } from "./github.js";
 import type { ToolContext } from "../types/toolContext.js";
 
 export const allTools = [
@@ -10,7 +11,8 @@ export const allTools = [
     ...fileTools,
     ...searchTools,
     ...netlifyTools,
-    ...netlifyMonitorTools
+    ...netlifyMonitorTools,
+    ...githubTools,
 ];
 
 export async function executeToolCall(name: string, args: any, context?: ToolContext) {
@@ -29,6 +31,9 @@ export async function executeToolCall(name: string, args: any, context?: ToolCon
     }
     if (netlifyMonitorTools.some(t => t.function.name === name)) {
         return handleNetlifyMonitorTool(name, args, context);
+    }
+    if (githubTools.some(t => t.function.name === name)) {
+        return handleGitHubTool(name, args, context);
     }
     return { error: `Tool ${name} not found` };
 }

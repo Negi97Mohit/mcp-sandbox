@@ -1,0 +1,93 @@
+name: Agent Eval Regression Suite
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  eval:
+    name: Run Agent Eval Suite
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build TypeScript
+        run: npm run build
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+
+      - name: Run eval regression suite
+        id: eval
+        run: npm run eval
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.AGENT_GITHUB_TOKEN }}
+          # Langfuse optional — traces still written locally
+          LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
+          LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
+
+      - name: Upload eval report artifact
+        uses: actions/upload-artifact@v4
+        if: always() # Upload even on failure so you can inspect failures
+        with:
+          name: eval-report-${{ github.run_number }}
+          path: eval_results/
+          retention-days: 30
+
+      - name: Upload traces artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: agent-traces-${{ github.run_number }}
+          path: traces/
+          retention-days: 14
+
+      - name: Comment PR with eval results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const dir = 'eval_results';
+            if (!fs.existsSync(dir)) return;
+            const files = fs.readdirSync(dir).filter(f => f.endsWith('.json')).sort().reverse();
+            if (!files.length) return;
+            const report = JSON.parse(fs.readFileSync(path.join(dir, files[0]), 'utf-8'));
+            const passEmoji = report.ciShouldFail ? '❌' : '✅';
+            const body = [
+              `## ${passEmoji} Agent Eval Results`,
+              '',
+              `| Metric | Value |`,
+              `|--------|-------|`,
+              `| Pass Rate | **${(report.overallPassRate * 100).toFixed(1)}%** (${report.passed}/${report.totalCases}) |`,
+              `| Tool Accuracy | ${(report.toolAccuracyAvg * 100).toFixed(1)}% |`,
+              `| Output Quality | ${(report.outputQualityAvg * 100).toFixed(1)}% |`,
+              `| Critical Failures | ${report.criticalFailures.length} |`,
+              `| CI Decision | ${report.ciShouldFail ? '❌ FAIL' : '✅ PASS'} |`,
+              '',
+              report.criticalFailures.length > 0
+                ? '**🔴 Critical failures:** ' + report.criticalFailures.map(f => `\`${f.caseId}\``).join(', ')
+                : '',
+              '',
+              `<details><summary>Full results</summary>\n\n\`\`\`json\n${JSON.stringify(report.results.map(r => ({ id: r.caseId, passed: r.passed, score: (r.overallScore * 100).toFixed(0) + '%' })), null, 2)}\n\`\`\`\n</details>`,
+            ].join('\n');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });

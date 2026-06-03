@@ -10,6 +10,8 @@ interface PermissionData {
             role: PermissionLevel;
             grantedAt: string;
             grantedBy?: string;
+            workspaceId?: string;
+            canManageTools?: boolean;
         };
     };
 }
@@ -39,16 +41,26 @@ export class PermissionManager {
         fs.writeFileSync(this.dbPath, JSON.stringify(this.data, null, 2));
     }
 
-    public grant(adminUserId: string, targetUserId: string, role: PermissionLevel) {
+    public grant(adminUserId: string, targetUserId: string, role: PermissionLevel, workspaceId?: string, canManageTools?: boolean) {
         if (!this.isAdmin(adminUserId)) {
             throw new Error('Only admins can grant permissions');
         }
 
-        this.data.users[targetUserId] = {
+        const existing = this.data.users[targetUserId];
+        const newUser: any = {
             role,
             grantedAt: new Date().toISOString(),
-            grantedBy: adminUserId
+            grantedBy: adminUserId,
         };
+        const wsId = workspaceId !== undefined ? workspaceId : existing?.workspaceId;
+        if (wsId !== undefined) {
+            newUser.workspaceId = wsId;
+        }
+        const mTools = canManageTools !== undefined ? canManageTools : existing?.canManageTools;
+        if (mTools !== undefined) {
+            newUser.canManageTools = mTools;
+        }
+        this.data.users[targetUserId] = newUser;
         this.saveData();
     }
 
@@ -85,11 +97,27 @@ export class PermissionManager {
         return role !== 'none';
     }
 
-    public listAll(): { userId: string; role: PermissionLevel }[] {
-        return Object.entries(this.data.users).map(([userId, data]) => ({
-            userId,
-            role: data.role
-        }));
+    public canManageTools(userId: string): boolean {
+        if (userId === "desktop-admin" || this.isAdmin(userId)) {
+            return true;
+        }
+        return !!this.data.users[userId]?.canManageTools;
+    }
+
+    public listAll(): { userId: string; role: PermissionLevel; workspaceId?: string; canManageTools?: boolean }[] {
+        return Object.entries(this.data.users).map(([userId, data]) => {
+            const item: any = {
+                userId,
+                role: data.role,
+            };
+            if (data.workspaceId !== undefined) {
+                item.workspaceId = data.workspaceId;
+            }
+            if (data.canManageTools !== undefined) {
+                item.canManageTools = data.canManageTools;
+            }
+            return item;
+        });
     }
 }
 
