@@ -2,6 +2,7 @@ import { spawn } from "child_process";
 import * as path from "path";
 import * as fs from "fs";
 import type { ToolContext } from "../types/toolContext.js";
+import { workspaceStore } from "../core/WorkspaceStore.js";
 
 export const shellTools = [
     {
@@ -24,7 +25,7 @@ export const shellTools = [
 const shellSessions = new Map<string, string>();
 
 function getSessionCwd(channelId: string): string {
-    return shellSessions.get(channelId) || process.cwd();
+    return shellSessions.get(channelId) || workspaceStore.getActivePath() || process.cwd();
 }
 
 function setSessionCwd(channelId: string, newPath: string) {
@@ -37,8 +38,10 @@ export async function handleShellCommand(args: { command: string }, context?: To
 
     // Initialize session if needed
     if (!shellSessions.has(channelId)) {
-        // If sandboxed, start in workspace root. Else CWD.
-        const initialDir = context?.workspaceRoot ? context.workspaceRoot : process.cwd();
+        // If sandboxed, start in workspace root. Else active workspace or CWD.
+        const initialDir = context?.workspaceRoot 
+            ? context.workspaceRoot 
+            : (workspaceStore.getActivePath() || process.cwd());
         setSessionCwd(channelId, initialDir);
     }
 
@@ -46,13 +49,20 @@ export async function handleShellCommand(args: { command: string }, context?: To
 
     // FIX: Fallback if currentDir doesn't exist (deleted folder)
     if (!fs.existsSync(currentDir)) {
-        currentDir = context?.workspaceRoot || process.cwd();
+        currentDir = context?.workspaceRoot || workspaceStore.getActivePath() || process.cwd();
         setSessionCwd(channelId, currentDir);
     }
 
+    const trimmedCmd = command.trim();
+    const isPureCd = (trimmedCmd === "cd" || trimmedCmd.startsWith("cd ")) &&
+                     !trimmedCmd.includes("&&") &&
+                     !trimmedCmd.includes(";") &&
+                     !trimmedCmd.includes("|") &&
+                     !trimmedCmd.includes("\n");
+
     // 1. Handle 'cd' manually
-    if (command.trim().startsWith("cd ")) {
-        const rawPath = command.trim().slice(3).trim();
+    if (isPureCd) {
+        const rawPath = trimmedCmd.slice(2).trim();
         try {
             const target = path.resolve(currentDir, rawPath);
 
@@ -86,6 +96,7 @@ export async function handleShellCommand(args: { command: string }, context?: To
             cwd: currentDir,
             env: process.env,
             stdio: ["ignore", "pipe", "pipe"], // ignore stdin for now
+            windowsVerbatimArguments: process.platform === "win32"
         });
 
         let outputBuffer = "";

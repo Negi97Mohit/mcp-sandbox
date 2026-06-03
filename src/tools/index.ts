@@ -6,7 +6,7 @@ import { netlifyMonitorTools, handleNetlifyMonitorTool } from "./netlifyMonitor.
 import { githubTools, handleGitHubTool } from "./github.js";
 import type { ToolContext } from "../types/toolContext.js";
 
-export const allTools = [
+export const allTools: any[] = [
     ...shellTools,
     ...fileTools,
     ...searchTools,
@@ -14,6 +14,10 @@ export const allTools = [
     ...netlifyMonitorTools,
     ...githubTools,
 ];
+
+export function getAllTools() {
+    return allTools;
+}
 
 export async function executeToolCall(name: string, args: any, context?: ToolContext) {
     // Check which handler to use

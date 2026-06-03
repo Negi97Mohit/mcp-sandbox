@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Secrets
 .env
 service-account.json
@@ -22,3 +23,11 @@ action_logs/
 # OS
 .DS_Store
 Thumbs.db
+=======
+.env
+node_modules/
+health_reports/
+release/
+dist/
+adapter_configs.json
+>>>>>>> 21ae54a5e5bc9c4982e9cfc60aa37d810d50bbd3

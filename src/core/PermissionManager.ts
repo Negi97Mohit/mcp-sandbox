@@ -104,6 +104,10 @@ export class PermissionManager {
         return !!this.data.users[userId]?.canManageTools;
     }
 
+    public getWorkspaceId(userId: string): string | undefined {
+        return this.data.users[userId]?.workspaceId;
+    }
+
     public listAll(): { userId: string; role: PermissionLevel; workspaceId?: string; canManageTools?: boolean }[] {
         return Object.entries(this.data.users).map(([userId, data]) => {
             const item: any = {

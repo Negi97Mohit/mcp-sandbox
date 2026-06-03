@@ -66,7 +66,6 @@ export interface ElectronAPI {
     discardGitChanges: (filePath: string) => Promise<any>;
     onAiModifyLog: (cb: (text: string) => void) => void;
     offAiModifyLog: () => void;
-
     onBotStatusChange: (cb: (status: string) => void) => void;
     onServiceLog: (cb: (log: string) => void) => void;
 }

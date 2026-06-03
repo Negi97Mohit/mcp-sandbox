@@ -14,6 +14,7 @@ import { executeToolCall } from "../tools/index.js";
 import { smartSplitMessage } from "./utils.js";
 import { permissionManager } from "../core/PermissionManager.js";
 import { workspaceManager } from "../core/WorkspaceManager.js";
+import { workspaceStore } from "../core/WorkspaceStore.js";
 import { approvalGate } from "../core/approvalGate.js";
 import { orchestrator } from "../agents/orchestrator.js";
 import type { ToolContext } from "../types/toolContext.js";
@@ -24,10 +25,15 @@ import { runEvalSuite } from "../evals/evalRunner.js";
 import { formatDiscordReport } from "../evals/evalReport.js";
 import type { AgentContext } from "../agents/agentTypes.js";
 
+const logDebug = (msg: string) => {
+    console.log(msg);
+};
+
 export const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.DirectMessages,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildMessageReactions, // needed for approval gate ✅/❌
     ],
@@ -71,7 +77,12 @@ client.on("messageReactionAdd", async (rawReaction: MessageReaction | any, rawUs
 
 // ── Message Router ─────────────────────────────────────────────────────────
 client.on("messageCreate", async (message) => {
-    await handleMessage(message);
+    logDebug(`[messageCreate Event] Fired! Author: ${message.author.tag} (${message.author.id}), Bot: ${message.author.bot}`);
+    try {
+        await handleMessage(message);
+    } catch (e: any) {
+        logDebug(`[messageCreate Event Error] Fatal error in event handler: ${e.message}`);
+    }
 });
 
 // ── Admin + Special Command Handler ───────────────────────────────────────
@@ -228,6 +239,16 @@ async function handleAgentCommand(message: Message): Promise<void> {
         return;
     }
 
+    // Only listen to Direct Messages (DMs) OR explicit mentions in server guilds
+    const isDM = !message.guild;
+    const isMentioned = client.user ? message.mentions.has(client.user) : false;
+    logDebug(`[handleMessage] isDM: ${isDM}, isMentioned: ${isMentioned}`);
+
+    if (!isDM && !isMentioned) {
+        logDebug(`[handleMessage] Ignored message (neither DM nor explicit mention).`);
+        return; // Ignore other server conversation to save tokens/costs
+    }
+
     const userId = message.author.id;
     if (!permissionManager.canWrite(userId)) {
         await message.reply("❌ You need **write** permission to use the orchestrator. Ask an admin for `!grant @you write`.");
@@ -373,7 +394,7 @@ INSTRUCTIONS:
     }
 
     const history = chatHistory.get(historyKey)!;
-    history.push({ role: "user", content: message.content });
+    history.push({ role: "user", content: message.cleanContent });
 
     try {
         await recordMessage();
@@ -399,6 +420,19 @@ INSTRUCTIONS:
                 };
 
                 const isAdmin = permissionManager.isAdmin(userId);
+                let workspaceRoot = "";
+                if (!isAdmin) {
+                    const wsId = permissionManager.getWorkspaceId(userId);
+                    let userWsPath = "";
+                    if (wsId) {
+                        const ws = workspaceStore.list().find(w => w.id === wsId);
+                        if (ws) {
+                            userWsPath = ws.path;
+                        }
+                    }
+                    workspaceRoot = userWsPath || workspaceManager.ensureWorkspace(userId);
+                }
+
                 const context: ToolContext = {
                     channelId: message.channel.id,
                     sendLog,
@@ -441,7 +475,8 @@ INSTRUCTIONS:
                 }
             }
         }
-    } catch (error) {
+    } catch (error: any) {
+        logDebug(`[handleMessage Error] Caught error: ${error.stack || error.message}`);
         console.error("❌ Error:", error);
         await recordError();
         try { await message.reply("⚠️ Something went wrong. Check the console for details."); } catch {}
