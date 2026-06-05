@@ -2,6 +2,7 @@ import { ipcMain } from "electron";
 import fs from "fs";
 import path from "path";
 import { CONFIG } from "../../src/config/env.js";
+import { graphStore } from "../../src/core/GraphStore.js";
 
 // ─── Cache for OpenRouter models ─────────────────────────────────────────────
 let cachedModels: any[] | null = null;
@@ -131,6 +132,29 @@ export function registerConfigHandlers() {
         }
 
         fs.writeFileSync(envPath, lines.join("\n"), "utf-8");
+
+        // Log config change to graph
+        const updatedKeys = Object.keys(updates);
+        if (updatedKeys.length > 0) {
+            const redactedUpdates: any = {};
+            for (const [k, v] of Object.entries(updates)) {
+                if (!v) continue;
+                if (k.includes("KEY") || k.includes("TOKEN") || k.includes("SECRET") || k.includes("PASSWORD")) {
+                    redactedUpdates[k] = v.length > 8 ? `${v.substring(0, 4)}...${v.slice(-4)}` : "***";
+                } else {
+                    redactedUpdates[k] = v;
+                }
+            }
+            graphStore.addNode({
+                type: "user_action",
+                label: "Configuration Updated",
+                status: "success",
+                createdBy: "user:desktop-ui",
+                colorCode: "emerald",
+                details: { description: `Updated configuration keys: ${updatedKeys.join(", ")}`, updates: redactedUpdates }
+            });
+        }
+
         return { success: true };
     });
 

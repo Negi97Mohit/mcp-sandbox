@@ -12,6 +12,7 @@ export declare class PermissionManager {
     canWrite(userId: string): boolean;
     canRead(userId: string): boolean;
     canManageTools(userId: string): boolean;
+    getWorkspaceId(userId: string): string | undefined;
     listAll(): {
         userId: string;
         role: PermissionLevel;

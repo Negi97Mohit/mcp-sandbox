@@ -49,6 +49,8 @@ export interface AgentContext {
   sendLog: (text: string) => Promise<void>;
 }
 
+import type { AiVerificationReport } from "../core/aiValidation.js";
+
 export interface AgentResult {
   taskId: string;
   agentType: SubTaskType;
@@ -62,6 +64,7 @@ export interface AgentResult {
   latencyMs: number;
   tokenUsage?: TokenUsage;
   error?: string | undefined;
+  aiVerificationReport?: AiVerificationReport;
 }
 
 // ─── Plan Steps ───────────────────────────────────────────────────────────

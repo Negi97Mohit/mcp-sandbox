@@ -19,6 +19,7 @@ import { approvalGate } from "../core/approvalGate.js";
 import { riskClassifier } from "../core/riskClassifier.js";
 import { tracer } from "../tracing/tracer.js";
 import { githubClient } from "../integrations/github.js";
+import { graphStore } from "../core/GraphStore.js";
 import type {
   AgentContext,
   AgentResult,
@@ -60,6 +61,15 @@ export class Orchestrator {
       // ── Phase 1: Planning ─────────────────────────────────────────────
       await context.sendLog("🧠 **Phase 1/3**: PlannerAgent analyzing codebase...");
 
+      const planNode = graphStore.addNode({
+        type: "agent_plan",
+        label: "Phase 1: Planning",
+        status: "running",
+        createdBy: "agent:PlannerAgent",
+        colorCode: "indigo",
+        details: { description: request }
+      });
+
       const planSpan = tracer.startSpan("orchestrator.plan", { taskId }, traceId);
       const planSubTask: SubTask = {
         id: `${taskId}-plan`,
@@ -82,6 +92,11 @@ export class Orchestrator {
         confidence: planResult.confidence,
         planSteps: planResult.plan?.length ?? 0,
         latencyMs: planResult.latencyMs,
+      });
+
+      graphStore.updateNode(planNode.id, {
+        status: planResult.success ? "success" : "failed",
+        details: { ...planNode.details, plan: planResult.plan, error: planResult.error } as any
       });
 
       if (!planResult.success) {
@@ -113,6 +128,15 @@ export class Orchestrator {
       // ── Phase 2: Implementation ────────────────────────────────────────
       await context.sendLog("⚙️ **Phase 2/3**: ImplementerAgent executing plan...");
 
+      const implNode = graphStore.addNode({
+        type: "agent_implement",
+        label: "Phase 2: Implementation",
+        status: "running",
+        createdBy: "agent:ImplementerAgent",
+        colorCode: "amber",
+        details: { description: `Execute this plan:\n${planResult.output}` }
+      });
+
       const implSpan = tracer.startSpan("orchestrator.implement", { taskId }, traceId);
       const implSubTask: SubTask = {
         id: `${taskId}-impl`,
@@ -135,6 +159,20 @@ export class Orchestrator {
         filesModified: implementResult.modifiedFiles?.length ?? 0,
         latencyMs: implementResult.latencyMs,
       });
+
+      graphStore.updateNode(implNode.id, {
+        status: implementResult.success ? "success" : "failed",
+        details: { ...implNode.details, modifiedFiles: implementResult.modifiedFiles, error: implementResult.error } as any
+      });
+
+      if (implementResult.success) {
+        const commitHash = await graphStore.captureGitCheckpoint(implNode.id, "Post Implementation");
+        if (commitHash) {
+          graphStore.updateNode(implNode.id, {
+            details: { ...implNode.details, gitCommitHash: commitHash, revertible: true }
+          });
+        }
+      }
 
       // Check for explicit escalation signal from implementer
       if (implementResult.output.includes("ESCALATE:")) {
@@ -167,6 +205,15 @@ export class Orchestrator {
       // ── Phase 3: Verification ──────────────────────────────────────────
       await context.sendLog("🔬 **Phase 3/3**: VerifierAgent running tests...");
 
+      const verifyNode = graphStore.addNode({
+        type: "agent_verify",
+        label: "Phase 3: Verification",
+        status: "running",
+        createdBy: "agent:VerifierAgent",
+        colorCode: "emerald",
+        details: { description: `Verify implementation for: ${request}` }
+      });
+
       const verifySpan = tracer.startSpan("orchestrator.verify", { taskId }, traceId);
       const verifySubTask: SubTask = {
         id: `${taskId}-verify`,
@@ -189,6 +236,11 @@ export class Orchestrator {
         testsTotal: verifyResult.testResults?.totalTests ?? 0,
         testsPassing: verifyResult.testResults?.passing ?? 0,
         latencyMs: verifyResult.latencyMs,
+      });
+
+      graphStore.updateNode(verifyNode.id, {
+        status: verifyResult.success ? "success" : "failed",
+        details: { ...verifyNode.details, testResults: verifyResult.testResults, confidence: verifyResult.confidence } as any
       });
 
       const confidence = verifyResult.confidence ?? 0.5;
@@ -275,6 +327,15 @@ export class Orchestrator {
         decision: decision.action,
         confidence,
         totalLatencyMs: result.totalLatencyMs,
+      });
+
+      graphStore.addNode({
+        type: "agent_decision",
+        label: "Orchestrator Decision",
+        status: decision.action === "escalate" ? "escalated" : decision.action === "abort" ? "aborted" : "success",
+        createdBy: "system:Orchestrator",
+        colorCode: decision.action === "auto_commit" ? "emerald" : decision.action === "request_approval" ? "amber" : "rose",
+        details: { decision: decision.action, reason: (decision as any).reason, prTitle: (decision as any).prTitle }
       });
 
       return result;

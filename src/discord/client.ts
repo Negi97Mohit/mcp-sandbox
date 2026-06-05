@@ -17,6 +17,7 @@ import { workspaceManager } from "../core/WorkspaceManager.js";
 import { workspaceStore } from "../core/WorkspaceStore.js";
 import { approvalGate } from "../core/approvalGate.js";
 import { orchestrator } from "../agents/orchestrator.js";
+import { graphStore } from "../core/GraphStore.js";
 import type { ToolContext } from "../types/toolContext.js";
 import { generateHealthReport, generateHistoryEmbed } from "../health/healthCheck.js";
 import { recordMessage, recordToolCall, recordError, recordResponseTime } from "../health/statsTracker.js";
@@ -95,6 +96,15 @@ async function handleAdminCommand(message: Message): Promise<void> {
         await message.reply("❌ You do not have permission to run admin commands.");
         return;
     }
+
+    graphStore.addNode({
+        type: "user_action",
+        label: `Admin Command: ${command}`,
+        status: "success",
+        createdBy: `discord:${message.author.username}`,
+        colorCode: "rose",
+        details: { description: message.content }
+    });
 
     try {
         // ── RBAC Management ────────────────────────────────────────────
@@ -284,6 +294,15 @@ async function handleAgentCommand(message: Message): Promise<void> {
         sendLog,
     };
 
+    graphStore.addNode({
+        type: "user_action",
+        label: "Agent Requested",
+        status: "success",
+        createdBy: `discord:${message.author.username}`,
+        colorCode: "fuchsia",
+        details: { description: request }
+    });
+
     try {
         const result = await orchestrator.run(request, agentCtx);
         const totalSecs = (result.totalLatencyMs / 1000).toFixed(1);
@@ -371,6 +390,15 @@ async function handleMessage(message: Message): Promise<void> {
     const userId = message.author.id;
     if (!permissionManager.canRead(userId)) return;
     if (!message.channel.isSendable()) return;
+
+    graphStore.addNode({
+        type: "user_action",
+        label: "Discord Chat",
+        status: "success",
+        createdBy: `discord:${message.author.username}`,
+        colorCode: "indigo",
+        details: { description: message.cleanContent }
+    });
 
     await message.channel.sendTyping();
 

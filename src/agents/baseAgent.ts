@@ -19,6 +19,7 @@ import type {
   TokenUsage,
 } from "./agentTypes.js";
 import type { ToolContext } from "../types/toolContext.js";
+import { validateAgentOutput } from "../core/aiValidation.js";
 
 export abstract class BaseAgent {
   /** Human-readable name for logs and traces */
@@ -182,6 +183,26 @@ export abstract class BaseAgent {
       tokenUsage,
     };
     if (error !== undefined) result.error = error;
+
+    // Run AI Output Verification Scaffold
+    if (success && output) {
+      try {
+        const report = validateAgentOutput(this.agentType, output, input.request);
+        result.aiVerificationReport = report;
+        
+        // Log validation details
+        input.context.sendLog(
+          `🔍 **[AI Verification]** Output Correctness Score: **${report.score}/100**\n` +
+          `• Schema Match: ${report.metrics.schemaMatch ? "✅" : "❌"} | ` +
+          `Syntax Valid: ${report.metrics.syntaxValid ? "✅" : "❌"} | ` +
+          `Safety Verified: ${report.metrics.safetyVerified ? "✅" : "❌"} | ` +
+          `Logical Consistency: ${report.metrics.logicalConsistency ? "✅" : "❌"}`
+        );
+      } catch (err: any) {
+        console.error("AI Validation error:", err);
+      }
+    }
+
     return result;
   }
 }

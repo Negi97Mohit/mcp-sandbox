@@ -1,17 +1,21 @@
-<<<<<<< HEAD
 # Secrets
 .env
 service-account.json
+adapter_configs.json
 
 # Node
 node_modules/
-dist/
 
-# Build artifacts
+# Build outputs
+dist/
+dist-electron/
+release/
+
+# Source maps
 *.js.map
 *.d.ts.map
 
-# Agent output directories (contain sensitive run data)
+# Agent/runtime output
 traces/
 eval_results/
 workspaces/
@@ -20,14 +24,6 @@ stats/
 chat_history/
 action_logs/
 
-# OS
+# OS files
 .DS_Store
 Thumbs.db
-=======
-.env
-node_modules/
-health_reports/
-release/
-dist/
-adapter_configs.json
->>>>>>> 21ae54a5e5bc9c4982e9cfc60aa37d810d50bbd3

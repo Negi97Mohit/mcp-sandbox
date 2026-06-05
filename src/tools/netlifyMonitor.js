@@ -1,5 +1,6 @@
 import { monitorStore } from "../services/netlifyMonitorStore.js";
 import { getGitRemoteUrl, findNetlifySiteByRepo, getNetlifySite } from "../services/netlifyUtils.js";
+import * as path from "path";
 export const netlifyMonitorTools = [
     {
         type: "function",
@@ -61,6 +62,16 @@ export async function handleNetlifyMonitorTool(name, args, context) {
                 const isHttp = args.target.startsWith("http://") || args.target.startsWith("https://") || args.target.startsWith("git@");
                 if (!isHttp) {
                     localPath = args.target;
+                    if (context?.workspaceRoot) {
+                        const resolved = path.resolve(context.workspaceRoot, localPath);
+                        if (!resolved.startsWith(context.workspaceRoot)) {
+                            return { error: `Access Denied: You cannot monitor repositories outside your workspace.` };
+                        }
+                        localPath = resolved;
+                    }
+                    else {
+                        localPath = path.resolve(localPath);
+                    }
                     repoUrl = await getGitRemoteUrl(localPath);
                     if (!repoUrl) {
                         return { error: `Could not determine the Git remote URL for local path: ${localPath}. Ensure it is a valid Git repository with an 'origin' remote.` };

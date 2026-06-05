@@ -50,7 +50,7 @@ declare class AgentTracer {
     endTrace(traceId: string, metadata?: Record<string, unknown>): void;
     /** Record a single LLM generation — convenience method */
     recordGeneration(opts: {
-        traceId: string;
+        traceId?: string;
         name: string;
         model: string;
         input: any[];

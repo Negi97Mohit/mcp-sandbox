@@ -14,6 +14,7 @@
 
 import { callOpenRouter } from "../llm/openRouter.js";
 import { executeToolCall } from "../tools/index.js";
+import { tracer } from "../tracing/tracer.js";
 import { evalSuite } from "./testCases.js";
 import { buildEvalResult, computeOverallScore } from "./scorer.js";
 import { generateEvalReport, saveEvalReport, printEvalSummary } from "./evalReport.js";
@@ -169,6 +170,8 @@ async function main() {
     verbose: true,
     ...(categories ? { categories } : {})
   });
+
+  await tracer.flush(); // Ensure traces are pushed to Langfuse
 
   if (report.ciShouldFail) {
     console.error("\n💥 CI FAILED: Eval pass rate below threshold or critical failures detected.");

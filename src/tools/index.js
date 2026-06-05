@@ -12,6 +12,9 @@ export const allTools = [
     ...netlifyMonitorTools,
     ...githubTools,
 ];
+export function getAllTools() {
+    return allTools;
+}
 export async function executeToolCall(name, args, context) {
     // Check which handler to use
     if (shellTools.some(t => t.function.name === name)) {

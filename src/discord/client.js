@@ -5,17 +5,23 @@ import { executeToolCall } from "../tools/index.js";
 import { smartSplitMessage } from "./utils.js";
 import { permissionManager } from "../core/PermissionManager.js";
 import { workspaceManager } from "../core/WorkspaceManager.js";
+import { workspaceStore } from "../core/WorkspaceStore.js";
 import { approvalGate } from "../core/approvalGate.js";
 import { orchestrator } from "../agents/orchestrator.js";
+import { graphStore } from "../core/GraphStore.js";
 import { generateHealthReport, generateHistoryEmbed } from "../health/healthCheck.js";
 import { recordMessage, recordToolCall, recordError, recordResponseTime } from "../health/statsTracker.js";
 import { generateChartEmbeds, generateStatsEmbed } from "../health/chartGenerator.js";
 import { runEvalSuite } from "../evals/evalRunner.js";
 import { formatDiscordReport } from "../evals/evalReport.js";
+const logDebug = (msg) => {
+    console.log(msg);
+};
 export const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.DirectMessages,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildMessageReactions, // needed for approval gate ✅/❌
     ],
@@ -55,7 +61,13 @@ client.on("messageReactionAdd", async (rawReaction, rawUser) => {
 });
 // ── Message Router ─────────────────────────────────────────────────────────
 client.on("messageCreate", async (message) => {
-    await handleMessage(message);
+    logDebug(`[messageCreate Event] Fired! Author: ${message.author.tag} (${message.author.id}), Bot: ${message.author.bot}`);
+    try {
+        await handleMessage(message);
+    }
+    catch (e) {
+        logDebug(`[messageCreate Event Error] Fatal error in event handler: ${e.message}`);
+    }
 });
 // ── Admin + Special Command Handler ───────────────────────────────────────
 async function handleAdminCommand(message) {
@@ -66,6 +78,14 @@ async function handleAdminCommand(message) {
         await message.reply("❌ You do not have permission to run admin commands.");
         return;
     }
+    graphStore.addNode({
+        type: "user_action",
+        label: `Admin Command: ${command}`,
+        status: "success",
+        createdBy: `discord:${message.author.username}`,
+        colorCode: "rose",
+        details: { description: message.content }
+    });
     try {
         // ── RBAC Management ────────────────────────────────────────────
         if (command === "!grant") {
@@ -205,6 +225,14 @@ async function handleAgentCommand(message) {
             "• `!agent Add input validation to the login endpoint`");
         return;
     }
+    // Only listen to Direct Messages (DMs) OR explicit mentions in server guilds
+    const isDM = !message.guild;
+    const isMentioned = client.user ? message.mentions.has(client.user) : false;
+    logDebug(`[handleMessage] isDM: ${isDM}, isMentioned: ${isMentioned}`);
+    if (!isDM && !isMentioned) {
+        logDebug(`[handleMessage] Ignored message (neither DM nor explicit mention).`);
+        return; // Ignore other server conversation to save tokens/costs
+    }
     const userId = message.author.id;
     if (!permissionManager.canWrite(userId)) {
         await message.reply("❌ You need **write** permission to use the orchestrator. Ask an admin for `!grant @you write`.");
@@ -235,6 +263,14 @@ async function handleAgentCommand(message) {
         issueNumber: issueMatch?.[1] ? parseInt(issueMatch[1], 10) : undefined,
         sendLog,
     };
+    graphStore.addNode({
+        type: "user_action",
+        label: "Agent Requested",
+        status: "success",
+        createdBy: `discord:${message.author.username}`,
+        colorCode: "fuchsia",
+        details: { description: request }
+    });
     try {
         const result = await orchestrator.run(request, agentCtx);
         const totalSecs = (result.totalLatencyMs / 1000).toFixed(1);
@@ -308,6 +344,14 @@ async function handleMessage(message) {
         return;
     if (!message.channel.isSendable())
         return;
+    graphStore.addNode({
+        type: "user_action",
+        label: "Discord Chat",
+        status: "success",
+        createdBy: `discord:${message.author.username}`,
+        colorCode: "indigo",
+        details: { description: message.cleanContent }
+    });
     await message.channel.sendTyping();
     const historyKey = `${message.channel.id}:${userId}`;
     if (!chatHistory.has(historyKey)) {
@@ -328,7 +372,7 @@ INSTRUCTIONS:
             }]);
     }
     const history = chatHistory.get(historyKey);
-    history.push({ role: "user", content: message.content });
+    history.push({ role: "user", content: message.cleanContent });
     try {
         await recordMessage();
         const startTime = Date.now();
@@ -355,6 +399,18 @@ INSTRUCTIONS:
                     }
                 };
                 const isAdmin = permissionManager.isAdmin(userId);
+                let workspaceRoot = "";
+                if (!isAdmin) {
+                    const wsId = permissionManager.getWorkspaceId(userId);
+                    let userWsPath = "";
+                    if (wsId) {
+                        const ws = workspaceStore.list().find(w => w.id === wsId);
+                        if (ws) {
+                            userWsPath = ws.path;
+                        }
+                    }
+                    workspaceRoot = userWsPath || workspaceManager.ensureWorkspace(userId);
+                }
                 const context = {
                     channelId: message.channel.id,
                     sendLog,
@@ -402,6 +458,7 @@ INSTRUCTIONS:
         }
     }
     catch (error) {
+        logDebug(`[handleMessage Error] Caught error: ${error.stack || error.message}`);
         console.error("❌ Error:", error);
         await recordError();
         try {

@@ -1,5 +1,6 @@
 import { CONFIG } from "../config/env.js";
 import { allTools } from "../tools/index.js";
+import { tracer } from "../tracing/tracer.js";
 
 // Regex to parse tool calls like [tool_name(arg="value")] OR tool_name(arg="value")
 // We make the outer brackets optional in a smarter way or handle it in the parser loop
@@ -109,6 +110,7 @@ export async function callOpenRouter(messages: any[], allowedToolNames?: string[
         ? allTools.filter((t) => allowedToolNames.includes(t.function.name))
         : allTools;
 
+    const startTime = Date.now();
     const response = await fetch(
         "https://openrouter.ai/api/v1/chat/completions",
         {
@@ -127,6 +129,7 @@ export async function callOpenRouter(messages: any[], allowedToolNames?: string[
             }),
         },
     );
+    const latencyMs = Date.now() - startTime;
 
     if (!response.ok) {
         const errorBody = await response.text();
@@ -140,6 +143,16 @@ export async function callOpenRouter(messages: any[], allowedToolNames?: string[
     }
 
     const message = data.choices[0].message;
+
+    // Record the LLM generation in Langfuse via tracer
+    tracer.recordGeneration({
+        name: "openRouter-chat",
+        model: CONFIG.MODEL_NAME,
+        input: messages,
+        output: JSON.stringify(message),
+        latencyMs,
+        usage: data.usage,
+    });
 
     // Debug: Log what we got
     console.log("📡 API Response:", JSON.stringify({

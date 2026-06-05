@@ -124,5 +124,35 @@
     "id": "msg_1779546693954_a",
     "role": "assistant",
     "content": "Hey! 👋What can I help you with today?"
+  },
+  {
+    "timestamp": "2026-06-03T13:57:49.605Z",
+    "id": "msg_1780495069604_u",
+    "role": "user",
+    "content": "hi"
+  },
+  {
+    "timestamp": "2026-06-03T13:57:51.642Z",
+    "id": "msg_1780495071641_a",
+    "role": "assistant",
+    "content": "Hey there! 👋 How can I help you today?"
+  },
+  {
+    "timestamp": "2026-06-04T06:24:27.593Z",
+    "id": "msg_1780554267592_u",
+    "role": "user",
+    "content": "hi"
+  },
+  {
+    "timestamp": "2026-06-04T06:24:29.873Z",
+    "id": "msg_1780554269873_a",
+    "role": "assistant",
+    "content": "Hello!👋 How can I assist you today?"
+  },
+  {
+    "timestamp": "2026-06-04T06:33:03.658Z",
+    "id": "msg_1780554783658_u",
+    "role": "user",
+    "content": "are u working??"
   }
 ]

@@ -61,7 +61,12 @@ class AgentTracer {
       try {
         // Dynamic import to avoid hard dependency — gracefully degrades if not installed
         import("langfuse").then(({ Langfuse }) => {
-          this.langfuseClient = new Langfuse({ secretKey, publicKey, baseUrl: host });
+          this.langfuseClient = new Langfuse({ 
+            secretKey, 
+            publicKey, 
+            baseUrl: host,
+            flushAt: 1 // Flush immediately, best practice for local dev and serverless
+          });
           console.log("📊 Langfuse tracing: ENABLED →", host);
         }).catch(() => {
           console.log("📊 Langfuse package not installed. Run: npm install langfuse");
@@ -165,7 +170,7 @@ class AgentTracer {
 
   /** Record a single LLM generation — convenience method */
   recordGeneration(opts: {
-    traceId: string;
+    traceId?: string;
     name: string;
     model: string;
     input: any[];
@@ -198,6 +203,13 @@ class AgentTracer {
         .slice(0, limit);
     } catch {
       return [];
+    }
+  }
+
+  /** Force flush to Langfuse before exit */
+  async flush() {
+    if (this.langfuseClient) {
+      await this.langfuseClient.flushAsync?.().catch(() => {});
     }
   }
 }

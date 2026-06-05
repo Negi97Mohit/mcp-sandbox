@@ -13,6 +13,7 @@ import {
     AlertTriangle,
     ChevronLeft,
     ChevronRight,
+    Share2,
 } from "lucide-react";
 import { api } from "../api/bridge.js";
 import AppLogo from "./AppLogo.js";
@@ -305,6 +306,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     <SidebarLink to="/users" icon={<Users size={15} />} label="Users & Access" />
 
                     <SidebarSection label="Agent Console" />
+                    <SidebarLink to="/visualizer" icon={<Share2 size={15} />} label="Live Graph" />
                     <SidebarLink to="/chat" icon={<MessageSquare size={15} />} label="Agent Chat" />
                     <SidebarLink to="/actions" icon={<History size={15} />} label="Action History" />
                     <SidebarLink to="/health" icon={<Activity size={15} />} label="Health & Stats" />

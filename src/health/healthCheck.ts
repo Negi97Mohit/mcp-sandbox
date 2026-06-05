@@ -24,6 +24,15 @@ export interface HealthCheckResult {
     responseTimeMs?: number;
 }
 
+/**
+ * Utility to redact sensitive tokens in logs and reports.
+ */
+function redactToken(token: string | undefined): string {
+    if (!token) return "";
+    if (token.length <= 8) return "***";
+    return `${token.substring(0, 4)}...${token.slice(-4)}`;
+}
+
 export interface StoredHealthReport {
     timestamp: string;
     date: string;
@@ -59,7 +68,7 @@ export function checkApiKey(): HealthCheckResult {
         name: "API Key",
         status: "pass",
         message: "✅ API Key configured",
-        details: `Key: ${apiKey}`
+        details: `Key: ${redactToken(apiKey)}`
     };
 }
 
@@ -82,7 +91,7 @@ export function checkDiscordToken(): HealthCheckResult {
         name: "Discord Token",
         status: "pass",
         message: "✅ Discord Token configured",
-        details: `Token: ${token}`
+        details: `Token: ${redactToken(token)}`
     };
 }
 

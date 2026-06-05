@@ -7,6 +7,7 @@ import { registerActionHandlers } from "./actionHandlers.js";
 import { registerWindowHandlers } from "./windowHandlers.js";
 import { registerWorkspaceHandlers } from "./workspaceHandlers.js";
 import { registerCustomToolHandlers } from "./customToolHandlers.js";
+import { registerGraphHandlers } from "./graphHandlers.js";
 
 export function registerAllIpcHandlers() {
     registerConfigHandlers();
@@ -18,4 +19,5 @@ export function registerAllIpcHandlers() {
     registerWindowHandlers();
     registerWorkspaceHandlers();
     registerCustomToolHandlers();
+    registerGraphHandlers();
 }

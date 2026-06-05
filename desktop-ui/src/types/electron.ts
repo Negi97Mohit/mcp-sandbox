@@ -68,6 +68,16 @@ export interface ElectronAPI {
     offAiModifyLog: () => void;
     onBotStatusChange: (cb: (status: string) => void) => void;
     onServiceLog: (cb: (log: string) => void) => void;
+
+    // Live Tree Graph
+    getGraph: () => Promise<any>;
+    revertGraph: (nodeId: string) => Promise<any>;
+    clearGraph: () => Promise<any>;
+    saveGraph: () => Promise<any>;
+    listGraphs: () => Promise<any[]>;
+    loadGraph: (sessionId: string) => Promise<any>;
+    onGraphUpdate: (callback: (graph: any) => void) => void;
+    offGraphUpdate: () => void;
 }
 
 declare global {

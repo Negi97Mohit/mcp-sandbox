@@ -93,4 +93,16 @@ contextBridge.exposeInMainWorld("api", {
     onServiceLog: (cb: (log: string) => void) => {
         ipcRenderer.on("service:log", (_e, log) => cb(log));
     },
+
+    // Live Tree Graph
+    getGraph: () => ipcRenderer.invoke("graph:get"),
+    revertGraph: (nodeId: string) => ipcRenderer.invoke("graph:revert", nodeId),
+    clearGraph: () => ipcRenderer.invoke("graph:clear"),
+    saveGraph: () => ipcRenderer.invoke("graph:save"),
+    onGraphUpdate: (callback: (graph: any) => void) => {
+        ipcRenderer.on("graph:update", (_e, data) => callback(data));
+    },
+    offGraphUpdate: () => {
+        ipcRenderer.removeAllListeners("graph:update");
+    },
 });

@@ -77,6 +77,9 @@ export class PermissionManager {
         }
         return !!this.data.users[userId]?.canManageTools;
     }
+    getWorkspaceId(userId) {
+        return this.data.users[userId]?.workspaceId;
+    }
     listAll() {
         return Object.entries(this.data.users).map(([userId, data]) => {
             const item = {

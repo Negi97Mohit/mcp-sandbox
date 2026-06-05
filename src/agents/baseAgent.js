@@ -10,6 +10,7 @@
 import { callOpenRouter } from "../llm/openRouter.js";
 import { executeToolCall } from "../tools/index.js";
 import { tracer } from "../tracing/tracer.js";
+import { validateAgentOutput } from "../core/aiValidation.js";
 export class BaseAgent {
     /**
      * Core run loop: sends messages to LLM, executes tool calls,
@@ -124,6 +125,22 @@ export class BaseAgent {
         };
         if (error !== undefined)
             result.error = error;
+        // Run AI Output Verification Scaffold
+        if (success && output) {
+            try {
+                const report = validateAgentOutput(this.agentType, output, input.request);
+                result.aiVerificationReport = report;
+                // Log validation details
+                input.context.sendLog(`🔍 **[AI Verification]** Output Correctness Score: **${report.score}/100**\n` +
+                    `• Schema Match: ${report.metrics.schemaMatch ? "✅" : "❌"} | ` +
+                    `Syntax Valid: ${report.metrics.syntaxValid ? "✅" : "❌"} | ` +
+                    `Safety Verified: ${report.metrics.safetyVerified ? "✅" : "❌"} | ` +
+                    `Logical Consistency: ${report.metrics.logicalConsistency ? "✅" : "❌"}`);
+            }
+            catch (err) {
+                console.error("AI Validation error:", err);
+            }
+        }
         return result;
     }
 }

@@ -10,6 +10,7 @@ import { Health } from "./pages/Health.js";
 import { Settings } from "./pages/Settings.js";
 import { Workspaces } from "./pages/Workspaces.js";
 import { CustomTools } from "./pages/CustomTools.js";
+import { Visualizer } from "./pages/Visualizer.js";
 
 const App: React.FC = () => {
   return (
@@ -25,6 +26,7 @@ const App: React.FC = () => {
           <Route path="/settings" element={<Settings />} />
           <Route path="/workspaces" element={<Workspaces />} />
           <Route path="/custom-tools" element={<CustomTools />} />
+          <Route path="/visualizer" element={<Visualizer />} />
         </Routes>
       </Layout>
     </Router>

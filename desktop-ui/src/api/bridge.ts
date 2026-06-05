@@ -160,4 +160,13 @@ export const api: ElectronAPI = isElectron
           discardGitChanges: async () => ({ success: true }),
           onAiModifyLog: () => {},
           offAiModifyLog: () => {},
+          // Live Tree Graph
+          getGraph: async () => ({ nodes: [], activeNodeId: null }),
+          revertGraph: async () => ({ success: true }),
+          clearGraph: async () => ({ success: true }),
+          saveGraph: async () => ({ success: true, filePath: "mock_path.json" }),
+          listGraphs: async () => [{ id: "mock_session_123", timestamp: new Date().toISOString(), nodeCount: 5 }],
+          loadGraph: async () => ({ success: true }),
+          onGraphUpdate: () => {},
+          offGraphUpdate: () => {},
       };
