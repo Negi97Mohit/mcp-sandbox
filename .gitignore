@@ -11,9 +11,19 @@ dist/
 dist-electron/
 release/
 
-# Source maps
+# Compiled TypeScript output (should not be committed)
+src/**/*.js
+src/**/*.d.ts
+src/**/*.js.map
+src/**/*.d.ts.map
 *.js.map
 *.d.ts.map
+check_models.js
+check_models.d.ts
+verify_sandbox.js
+verify_sandbox.d.ts
+index.js
+index.d.ts
 
 # Agent/runtime output
 traces/
@@ -23,6 +33,10 @@ health_reports/
 stats/
 chat_history/
 action_logs/
+
+# Logs
+*.log
+discord_debug.log
 
 # OS files
 .DS_Store
